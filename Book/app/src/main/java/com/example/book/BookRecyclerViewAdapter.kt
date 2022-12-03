@@ -3,13 +3,11 @@ package com.example.book
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Drawable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.example.book.databinding.BookItemBinding
 
 class BookRecyclerViewAdapter(private val bookData: List<BookData>) : RecyclerView.Adapter<Book>() {
@@ -29,19 +27,18 @@ class BookRecyclerViewAdapter(private val bookData: List<BookData>) : RecyclerVi
     override fun getItemCount(): Int {
         return bookData.size
     }
-
 }
 
 class Book(private val binding: BookItemBinding, private val context: Context) : RecyclerView.ViewHolder(binding.root) {
     @SuppressLint("UseCompatLoadingForDrawables")
     fun bind(bookData: BookData) {
         binding.apply {
-            bookImage.setImageDrawable(context.getDrawable(bookData.image))
+            Glide.with(context).load(bookData.imageUrl).into(imageView)
+            imageBar.visibility = View.GONE
 
-            bookImage.setOnClickListener {
+            imageView.setOnClickListener {
                 val intent = Intent(context, PdfViewActivity::class.java)
-                intent.putExtra("bookUrl", bookData.bookUrl)
-                intent.putExtra("bookName", bookData.name)
+                intent.putExtra("bookData", bookData)
                 context.startActivity(intent)
             }
         }

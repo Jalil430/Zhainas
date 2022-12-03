@@ -1,3 +1,13 @@
 package com.example.book
 
-data class BookData(val name: String, val bookUrl: String, val image: Int, val chapters: List<Int>, val chaptersName: List<String>)
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
+data class BookData(
+    val name: String,
+    val bookUrl: String,
+    val imageUrl: String,
+    val chaptersPage: ArrayList<Int>,
+    val chaptersName: ArrayList<String>
+    ) : Parcelable

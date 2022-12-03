@@ -1,33 +1,34 @@
 {
   "project_info": {
-    "project_number": "338935712549",
-    "project_id": "zhainas-bd711",
-    "storage_bucket": "zhainas-bd711.appspot.com"
+    "project_number": "363051681729",
+    "firebase_url": "https://books-812e1-default-rtdb.firebaseio.com",
+    "project_id": "books-812e1",
+    "storage_bucket": "books-812e1.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:338935712549:android:4315b74343e91fee8f28cc",
+        "mobilesdk_app_id": "1:363051681729:android:d8319e2dbdff82c3da1140",
         "android_client_info": {
           "package_name": "com.example.book"
         }
       },
       "oauth_client": [
         {
-          "client_id": "338935712549-qphtn0t686mqjptk51hpc89acai53s5q.apps.googleusercontent.com",
+          "client_id": "363051681729-qih1sanmb7rh5stta0kurs20hmr2ut5p.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCAATm7lxNKC_2ff0guQ8d1DrKqANJtrhE"
+          "current_key": "AIzaSyBSk7OuaEB6suRgFGOpwDrrzioavtLV5aM"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "338935712549-qphtn0t686mqjptk51hpc89acai53s5q.apps.googleusercontent.com",
+              "client_id": "363051681729-qih1sanmb7rh5stta0kurs20hmr2ut5p.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

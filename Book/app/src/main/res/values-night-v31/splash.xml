@@ -2,8 +2,8 @@
 <resources>
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
-        <item name="android:windowSplashScreenBackground">@color/splash_screen_night_mode</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenBackground">@color/main_1</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/heham_tv_splash</item>
         <item name="postSplashScreenTheme">@style/Theme.Book</item>
     </style>
 </resources>

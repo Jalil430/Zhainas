@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootMainScreen"
@@ -9,23 +9,56 @@
     tools:context=".MainScreenActivity">
 
     <RelativeLayout
+        android:id="@+id/topRelativeLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <TextView
-            android:id="@+id/textView3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:layout_margin="@dimen/_5sdp"
-            android:text="Жайнаш"
-            android:textColor="#323232"
-            android:textSize="@dimen/_15ssp"
-            android:textStyle="bold" />
+        <ImageView
+            android:id="@+id/imageView3"
+            android:layout_width="@dimen/_135sdp"
+            android:layout_height="@dimen/_19sdp"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:layout_marginBottom="@dimen/_16sdp"
+            app:srcCompat="@drawable/heham_tv_" />
     </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-</LinearLayout>
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottomRelativeLayout"
+        android:layout_below="@+id/topRelativeLayout"/>
+
+    <RelativeLayout
+        android:id="@+id/bottomRelativeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bottom_navigation_view">
+
+        <ImageView
+            android:id="@+id/homePage"
+            android:layout_width="@dimen/_100sdp"
+            android:layout_height="@dimen/_62sdp"
+            android:padding="@dimen/_22sdp"
+            android:layout_toStartOf="@+id/bookPage"
+            app:srcCompat="@drawable/home_page" />
+
+        <ImageView
+            android:id="@+id/lovedPage"
+            android:layout_width="@dimen/_100sdp"
+            android:layout_height="@dimen/_62sdp"
+            android:padding="@dimen/_22sdp"
+            android:layout_toEndOf="@+id/bookPage"
+            app:srcCompat="@drawable/loved_page" />
+
+        <ImageView
+            android:id="@+id/bookPage"
+            android:layout_width="@dimen/_100sdp"
+            android:layout_height="@dimen/_62sdp"
+            android:padding="@dimen/_22sdp"
+            android:layout_centerInParent="true"
+            app:srcCompat="@drawable/book_page" />
+    </RelativeLayout>
+</RelativeLayout>

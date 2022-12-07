@@ -6,6 +6,7 @@
     android:layout_marginBottom="@dimen/_3sdp"
     app:cardCornerRadius="@dimen/_3sdp"
     app:cardElevation="0dp"
+    android:id="@+id/rootBookItem"
     app:contentPadding="@dimen/_3sdp">
 
     <RelativeLayout

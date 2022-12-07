@@ -3,7 +3,6 @@ package com.example.book
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -29,13 +28,14 @@ class MainScreenActivity : AppCompatActivity() {
         }
         setContentView(R.layout.main_screen)
         binding = MainScreenBinding.bind(findViewById(R.id.rootMainScreen))
+        var preferences = getPreferences(MODE_PRIVATE)
 
         getBooksInformation()
         Handler().postDelayed({
             val layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
             binding?.apply {
                 recyclerView.layoutManager = layoutManager
-                val adapter = BookRecyclerViewAdapter(bookData)
+                val adapter = BookRecyclerViewAdapter(bookData, preferences)
                 recyclerView.adapter = adapter
             }
         }, 5000)

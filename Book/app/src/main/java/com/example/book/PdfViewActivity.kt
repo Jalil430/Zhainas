@@ -1,14 +1,18 @@
 package com.example.book
 
 import android.annotation.SuppressLint
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
+import com.example.book.databinding.BookItemBinding
 import com.example.book.databinding.PdfViewBinding
 import com.google.firebase.storage.FirebaseStorage
+import java.util.prefs.Preferences
 
 class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
 
@@ -46,7 +50,7 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
             spinner.onItemSelectedListener = this@PdfViewActivity
         }
 
-        bookUrl?.loadBookFromUrl()
+           bookUrl?.loadBookFromUrl()
     }
 
     @SuppressLint("SetTextI18n")
@@ -58,7 +62,7 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
                 Log.d(TAG, "loadBookFromUrl: Pdf got from url successfully")
 
                 binding!!.pdfView.fromBytes(bytes)
-                    .swipeHorizontal(false)
+                    .swipeHorizontal(true)
                     .onPageChange {page, pageCount ->
                         val currentPage = page + 1
                         binding!!.textView2.text = "$currentPage/$pageCount"
@@ -89,10 +93,7 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
         val pageCount = binding?.pdfView?.pageCount?.toFloat()
 
         if (chaptersPage != null && pageCount!! > 0F) {
-            binding?.pdfView?.jumpTo(chaptersPage[position])
-//            val page = chaptersPage[position] / pageCount
-//            Log.d("dffrrr", "${chaptersPage[position]} / $pageCount = ${chaptersPage[position] / pageCount}")
-//            binding?.pdfView?.positionOffset = page
+            binding?.pdfView?.jumpTo(chaptersPage[position] - 1)
         } else {
             Log.d(TAG, "chapters page/ pageCount = null")
         }

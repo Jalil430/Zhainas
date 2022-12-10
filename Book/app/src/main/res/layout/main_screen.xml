@@ -28,37 +28,37 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/bottomRelativeLayout"
-        android:layout_below="@+id/topRelativeLayout"/>
+        android:layout_below="@+id/topRelativeLayout" />
 
     <RelativeLayout
         android:id="@+id/bottomRelativeLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@drawable/bottom_navigation_view">
+        android:background="@drawable/bottom_navigation_view_foreground">
 
         <ImageView
             android:id="@+id/homePage"
             android:layout_width="@dimen/_100sdp"
-            android:layout_height="@dimen/_62sdp"
-            android:padding="@dimen/_22sdp"
+            android:layout_height="@dimen/_60sdp"
             android:layout_toStartOf="@+id/bookPage"
-            app:srcCompat="@drawable/home_page" />
+            android:padding="@dimen/_22sdp"
+            app:srcCompat="@drawable/home_page_filled" />
 
         <ImageView
             android:id="@+id/lovedPage"
             android:layout_width="@dimen/_100sdp"
-            android:layout_height="@dimen/_62sdp"
-            android:padding="@dimen/_22sdp"
+            android:layout_height="@dimen/_60sdp"
             android:layout_toEndOf="@+id/bookPage"
+            android:padding="@dimen/_22sdp"
             app:srcCompat="@drawable/loved_page" />
 
         <ImageView
             android:id="@+id/bookPage"
             android:layout_width="@dimen/_100sdp"
-            android:layout_height="@dimen/_62sdp"
-            android:padding="@dimen/_22sdp"
+            android:layout_height="@dimen/_60sdp"
             android:layout_centerInParent="true"
+            android:padding="@dimen/_22sdp"
             app:srcCompat="@drawable/book_page" />
     </RelativeLayout>
 </RelativeLayout>

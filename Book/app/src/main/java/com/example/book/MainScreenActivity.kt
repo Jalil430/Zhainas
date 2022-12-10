@@ -1,5 +1,6 @@
 package com.example.book
 
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -16,7 +17,7 @@ class MainScreenActivity : AppCompatActivity() {
 
     private val viewModel: SplashScreenViewModel by viewModels()
     private var binding: MainScreenBinding? = null
-    private var bookData = listOf(BookData("df", "fd", "fd", arrayListOf(1,3), arrayListOf("", "2")))
+    private var bookData = listOf(BookData("df","writer", "fd", "fd", arrayListOf(1,3), arrayListOf("", "2"), 0F))
 
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,9 +29,15 @@ class MainScreenActivity : AppCompatActivity() {
         }
         setContentView(R.layout.main_screen)
         binding = MainScreenBinding.bind(findViewById(R.id.rootMainScreen))
-        var preferences = getPreferences(MODE_PRIVATE)
+    }
 
-        getBooksInformation()
+    override fun onResume() {
+        super.onResume()
+
+        val preferences = getPreferences(MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("BookProgress", MODE_PRIVATE)
+
+        getBooksInformation(sharedPref)
         Handler().postDelayed({
             val layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
             binding?.apply {
@@ -42,10 +49,10 @@ class MainScreenActivity : AppCompatActivity() {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun getBooksInformation() {
+    private fun getBooksInformation(sharedPref: SharedPreferences) {
         val ref = FirebaseDatabase.getInstance().reference
 
-        ref.addListenerForSingleValueEvent(object : ValueEventListener {
+        ref.addListenerForSingleValueEvent(object: ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val book1: BookData
                 val book2: BookData
@@ -61,100 +68,122 @@ class MainScreenActivity : AppCompatActivity() {
                 snapshot.child("1").apply {
                     book1 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("1", 0F)
                     )
                 }
                 snapshot.child("2").apply {
                     book2 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("2", 0F)
                     )
                 }
                 snapshot.child("3").apply {
                     book3 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("3", 0F)
                     )
                 }
                 snapshot.child("4").apply {
                     book4 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("4", 0F)
                     )
                 }
                 snapshot.child("5").apply {
                     book5 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("5", 0F)
                     )
                 }
                 snapshot.child("6").apply {
                     book6 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("6", 0F)
                     )
                 }
                 snapshot.child("7").apply {
                     book7 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("7", 0F)
                     )
                 }
                 snapshot.child("8").apply {
                     book8 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("8", 0F)
                     )
                 }
                 snapshot.child("9").apply {
                     book9 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("9", 0F)
                     )
                 }
                 snapshot.child("10").apply {
                     book10 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("10", 0F)
                     )
                 }
                 snapshot.child("11").apply {
                     book11 = BookData(
                         this.child("Name").value.toString(),
+                        this.child("Writer").value.toString(),
                         this.child("Book url").value.toString(),
                         this.child("Image url").value.toString(),
                         this.child("Chapters page").value as ArrayList<Int>,
-                        this.child("Chapters name").value as ArrayList<String>
+                        this.child("Chapters name").value as ArrayList<String>,
+                        sharedPref.getFloat("11", 0F)
                     )
                 }
 

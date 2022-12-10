@@ -6,18 +6,16 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
-import android.widget.ArrayAdapter
+import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
-import com.example.book.databinding.BookItemBinding
 import com.example.book.databinding.PdfViewBinding
 import com.google.firebase.storage.FirebaseStorage
-import java.util.prefs.Preferences
 
 class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
 
     private var binding: PdfViewBinding? = null
     private var bookData: BookData? = null
+    private var position: Int? = null
 
     private companion object {
         const val TAG = "PDF_VIEW_TAG"
@@ -29,32 +27,44 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
         binding = PdfViewBinding.bind(findViewById(R.id.rootBookDetails))
 
         bookData = intent.getParcelableExtra("bookData")
+        position = intent.getIntExtra("position", -1)
         val bookUrl = bookData?.bookUrl
         val bookName = bookData?.name
+        val chaptersPage = bookData?.chaptersPage
         val chaptersName = bookData?.chaptersName
 
         binding?.apply {
-            textView.text = bookName
-            imageView2.setOnClickListener {
+            tvBookNamePdf.text = bookName
+            icBack.setOnClickListener {
                 onBackPressed()
             }
 
-            ArrayAdapter(
-                this@PdfViewActivity,
-                android.R.layout.simple_spinner_item,
-                chaptersName!!
-            ).also { adapter ->
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                spinner.adapter = adapter
-            }
-            spinner.onItemSelectedListener = this@PdfViewActivity
+            currentPageBar.visibility = View.GONE
+            currentPageBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, p2: Boolean) {
+                    pdfView.positionOffset = progress.toFloat() / 100F
+                }
+
+                override fun onStartTrackingTouch(p0: SeekBar?) {
+                }
+
+                override fun onStopTrackingTouch(p0: SeekBar?) {
+                }
+            })
         }
 
-           bookUrl?.loadBookFromUrl()
+        val sharedPref = getSharedPreferences("BookProgress", MODE_PRIVATE)
+
+        bookUrl?.loadBookFromUrl(sharedPref, position!!, chaptersPage, chaptersName)
     }
 
     @SuppressLint("SetTextI18n")
-    private fun String.loadBookFromUrl() {
+    private fun String.loadBookFromUrl(
+        sharedPref: SharedPreferences,
+        position: Int,
+        chaptersPage: ArrayList<Int>?,
+        chaptersName: ArrayList<String>?
+    ) {
         Log.d(TAG, this)
         val reference = FirebaseStorage.getInstance().getReferenceFromUrl(this)
         reference.getBytes(Constants.MAX_BYTES_PDF)
@@ -62,11 +72,39 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
                 Log.d(TAG, "loadBookFromUrl: Pdf got from url successfully")
 
                 binding!!.pdfView.fromBytes(bytes)
+                    .defaultPage(sharedPref.getInt("lastPage of ${position + 1}", 0))
                     .swipeHorizontal(true)
                     .onPageChange {page, pageCount ->
+
                         val currentPage = page + 1
-                        binding!!.textView2.text = "$currentPage/$pageCount"
+                        binding!!.tvPages.text = "$currentPage из $pageCount стр"
                         Log.d(TAG, "loadBookFromUrl: $currentPage/$pageCount")
+
+                        with (sharedPref.edit()) {
+                            if (currentPage >= sharedPref.getInt("lastMaxPage of ${position + 1}", 0)) {
+                                putInt("lastMaxPage of ${position + 1}", currentPage)
+                                putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100F)
+                                apply()
+                            }
+                            putInt("lastPage of ${position + 1}", currentPage - 1)
+                            putFloat("seekBar ${position + 1}", binding!!.pdfView.positionOffset * 100F)
+                            apply()
+                        }
+
+                        binding!!.currentPageBar.visibility = View.VISIBLE
+                        binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0F).toInt()
+
+                        for (i in 0..chaptersPage!!.size) {
+                            if (i + 1 < chaptersPage.size) {
+                                if (currentPage >= chaptersPage[i] && currentPage < chaptersPage[i + 1]) {
+                                    binding!!.tvChapterName.text = chaptersName!![i]
+                                } else {
+                                    binding!!.tvChapterName.text = "Йоьхье"
+                                }
+                            }
+                        }
+
+
                     }
                     .onError { t ->
                         Log.d(TAG, "loadBookFromUrl: ${t.message}")
@@ -75,14 +113,12 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
                         Log.d(TAG, "loadBookFromUrl: ${t.message} on page: $page")
                     }
                     .onLoad {
-                        binding!!.pageBar.visibility = View.GONE
                         binding!!.pdfBar.visibility = View.GONE
                     }
                     .load()
             }
             .addOnFailureListener { e ->
                 Log.d(TAG, "loadBookFromUrl: Failed to get pdf due to ${e.message}")
-                binding!!.pageBar.visibility = View.GONE
                 binding!!.pdfBar.visibility = View.GONE
             }
     }

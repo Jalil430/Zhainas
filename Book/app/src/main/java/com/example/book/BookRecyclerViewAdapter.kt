@@ -91,47 +91,49 @@ class RecentBook(
     fun bind0 (bookData: List<BookData>) {
         binding.apply {
 
-            val book = bookData[recent]
+            if (bookData.size > 1) {
+                val book = bookData[recent]
 
-            with(context).load(book.imageUrl)
-                .listener(object: RequestListener<Drawable> {
-                    override fun onLoadFailed(
-                        e: GlideException?,
-                        model: Any?,
-                        target: Target<Drawable>?,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        Log.d("ji", "fail")
-                        return false
-                    }
+                with(context).load(book.imageUrl)
+                    .listener(object: RequestListener<Drawable> {
+                        override fun onLoadFailed(
+                            e: GlideException?,
+                            model: Any?,
+                            target: Target<Drawable>?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            Log.d("ji", "fail")
+                            return false
+                        }
 
-                    override fun onResourceReady(
-                        resource: Drawable?,
-                        model: Any?,
-                        target: Target<Drawable>?,
-                        dataSource: DataSource?,
-                        isFirstResource: Boolean
-                    ): Boolean {
-                        imageBarR.visibility = View.GONE
-                        return false
-                    }
-                })
-                .placeholder(android.R.drawable.progress_indeterminate_horizontal)
-                .error(android.R.drawable.stat_notify_error)
-                .into(imageViewR)
+                        override fun onResourceReady(
+                            resource: Drawable?,
+                            model: Any?,
+                            target: Target<Drawable>?,
+                            dataSource: DataSource?,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            imageBarR.visibility = View.GONE
+                            return false
+                        }
+                    })
+                    .placeholder(android.R.drawable.progress_indeterminate_horizontal)
+                    .error(android.R.drawable.stat_notify_error)
+                    .into(imageViewR)
 
-            bookCardR.setOnClickListener {
-                val intent = Intent(context, PdfViewActivity::class.java)
-                intent.putExtra("bookData", book)
-                intent.putExtra("position", recent)
-                context.startActivity(intent)
+                bookCardR.setOnClickListener {
+                    val intent = Intent(context, PdfViewActivity::class.java)
+                    intent.putExtra("bookData", book)
+                    intent.putExtra("position", recent)
+                    context.startActivity(intent)
+                }
+
+                tvBookNameR.text = book.name
+                tvWriterR.text = book.writer
+                "${book.progress.toInt()}%".also { tvProgressR.text = it }
+                progressBookR.progress = book.progress.toInt()
             }
-
-            tvBookNameR.text = book.name
-            tvWriterR.text = book.writer
-            "${book.progress.toInt()}%".also { tvProgressR.text = it }
-            progressBookR.progress = book.progress.toInt()
-        }
+            }
     }
 }
 

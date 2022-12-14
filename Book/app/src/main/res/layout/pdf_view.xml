@@ -5,6 +5,7 @@
     android:id="@+id/rootBookDetails"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     android:orientation="vertical"
     tools:context=".PdfViewActivity">
 
@@ -22,32 +23,36 @@
             android:layout_width="@dimen/_45sdp"
             android:layout_height="@dimen/_45sdp"
             android:padding="@dimen/_8sdp"
-            app:srcCompat="@drawable/ic_arrow_back" />
+            app:srcCompat="@drawable/ic_arrow_back"
+            tools:ignore="ContentDescription" />
 
         <ImageView
-            android:id="@+id/imageView2"
+            android:id="@+id/icSettings"
             android:layout_width="@dimen/_45sdp"
             android:layout_height="@dimen/_45sdp"
             android:layout_centerVertical="true"
-            android:layout_toStartOf="@id/imageView5"
+            android:layout_toStartOf="@id/icChapters"
+            android:visibility="gone"
             android:padding="@dimen/_11sdp"
             app:srcCompat="@drawable/settings" />
 
         <ImageView
-            android:id="@+id/imageView5"
+            android:id="@+id/icChapters"
             android:layout_width="@dimen/_45sdp"
             android:layout_height="@dimen/_45sdp"
             android:layout_centerVertical="true"
-            android:layout_toStartOf="@id/imageView4"
+            android:layout_toStartOf="@id/icLoved"
+            android:visibility="gone"
             android:padding="@dimen/_11sdp"
             app:srcCompat="@drawable/menu" />
 
         <ImageView
-            android:id="@+id/imageView4"
+            android:id="@+id/icLoved"
             android:layout_width="@dimen/_45sdp"
             android:layout_height="@dimen/_45sdp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
+            android:visibility="gone"
             android:padding="@dimen/_11sdp"
             app:srcCompat="@drawable/loved" />
 
@@ -57,7 +62,9 @@
         android:id="@+id/pdfLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottomLayout"
+        android:visibility="invisible"
+        android:clickable="false"
+        app:layout_constraintBottom_toTopOf="@+id/shadowR"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topLayout">
@@ -76,6 +83,35 @@
     </RelativeLayout>
 
     <RelativeLayout
+        android:id="@+id/chaptersLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/shadowR"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/topLayout">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/chaptersRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        </androidx.recyclerview.widget.RecyclerView>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/shadowR"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_25sdp"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bottom_layout_shadow"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="@dimen/_85sdp"
+        app:layout_constraintTop_toBottomOf="@+id/pdfLayout">
+    </RelativeLayout>
+
+    <RelativeLayout
         android:id="@+id/bottomLayout"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_100sdp"
@@ -84,8 +120,7 @@
         android:padding="@dimen/_5sdp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/pdfLayout">
+        app:layout_constraintStart_toStartOf="parent">
 
             <TextView
                 android:id="@+id/tvBookNamePdf"
@@ -108,18 +143,20 @@
                 android:textSize="@dimen/_13ssp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvChapterName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_marginStart="@dimen/_3sdp"
-                android:layout_marginTop="@dimen/_40sdp"
-                android:layout_toStartOf="@+id/tvPages"
-                android:allowUndo="false"
-                android:text="Название главы..."
-                android:textSize="@dimen/_13ssp"
-                android:textStyle="bold" />
+        <TextView
+            android:id="@+id/tvChapterName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/currentPageBar"
+            android:layout_alignParentStart="true"
+            android:layout_marginStart="@dimen/_3sdp"
+            android:layout_marginTop="@dimen/_40sdp"
+            android:layout_marginBottom="16dp"
+            android:layout_toStartOf="@+id/tvPages"
+            android:allowUndo="false"
+            android:text="Название главы..."
+            android:textSize="@dimen/_13ssp"
+            android:textStyle="bold" />
 
             <SeekBar
                 android:id="@+id/currentPageBar"
@@ -131,7 +168,58 @@
                 android:progress="0"
                 android:progressDrawable="@drawable/seekbar_style"
                 android:splitTrack="false"
+                android:visibility="gone"
                 android:thumb="@drawable/custom_thumb" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/bottomLayoutSettings"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_100sdp"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bottom_navigation_view"
+        android:padding="@dimen/_5sdp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageView
+            android:id="@+id/btnSelectedColor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@id/btnWhiteColor"
+            android:layout_marginTop="@dimen/_40sdp"
+            app:srcCompat="@drawable/btn_selected_color"
+            tools:ignore="ContentDescription" />
+
+        <ImageView
+            android:id="@+id/btnWhiteColor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="@dimen/_40sdp"
+            app:srcCompat="@drawable/btn_white_color" />
+
+        <ImageView
+            android:id="@+id/btnDarkColor"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/btnWhiteColor"
+            android:layout_marginTop="@dimen/_40sdp"
+            app:srcCompat="@drawable/btn_dark_color" />
+
+        <TextView
+            android:id="@+id/textView95"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_5sdp"
+            android:layout_marginTop="@dimen/_5sdp"
+            android:text="Цвет фона"
+            android:textColor="#323232"
+            android:textSize="@dimen/_15ssp"
+            android:textStyle="bold" />
 
     </RelativeLayout>
 

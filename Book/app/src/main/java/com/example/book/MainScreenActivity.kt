@@ -1,10 +1,14 @@
 package com.example.book
 
+import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.SharedPreferences
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.view.View
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.book.databinding.MainScreenBinding
@@ -17,8 +21,15 @@ class MainScreenActivity : AppCompatActivity() {
 
     private val viewModel: SplashScreenViewModel by viewModels()
     private var binding: MainScreenBinding? = null
-    private var bookData = listOf(BookData("df","writer", "fd", "fd", arrayListOf(1,3), arrayListOf("", "2"), 0F))
+    private var bookData = listOf(
+        BookData("Не удалось загрузить данные с сервера(", "Не удалось загрузить данные с сервера(", "Не удалось загрузить данные с сервера(", "Не удалось загрузить данные с сервера(", arrayListOf(999), arrayListOf(""),0F),
+        BookData("Не удалось загрузить данные с сервера(", "Не удалось загрузить данные с сервера(", "Не удалось загрузить данные с сервера(", "Не удалось загрузить данные с сервера(", arrayListOf(999), arrayListOf(""),0F))
+    private var whichPage = 0
 
+    private var isConnectedToInternet: Boolean? = null
+    private var connectionLiveData: ConnectionLiveData? = null
+
+    @SuppressLint("MissingInflatedId")
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,23 +40,150 @@ class MainScreenActivity : AppCompatActivity() {
         }
         setContentView(R.layout.main_screen)
         binding = MainScreenBinding.bind(findViewById(R.id.rootMainScreen))
+
+        val sharedPref = getSharedPreferences("Book", MODE_PRIVATE)
+        val isNightMode = sharedPref.getBoolean("isNightMode", false)
+        if (isNightMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        }
+
+        whichPage = 1
+        checkNetworkConnection()
+
+        binding?.apply {
+            refresh.setOnClickListener {
+                onResume()
+            }
+
+            homePage.setOnClickListener {
+                if (whichPage != 1) {
+                    whichPage = 1
+                    homePage.setImageResource(R.drawable.home_page_filled)
+                    lovedPage.setImageResource(R.drawable.loved_page)
+                    onResume()
+                }
+            }
+            lovedPage.setOnClickListener {
+                if (whichPage != 2) {
+                    whichPage = 2
+                    homePage.setImageResource(R.drawable.home_page)
+                    lovedPage.setImageResource(R.drawable.loved_page_filled)
+                    onResume()
+                }
+            }
+        }
+    }
+
+    private fun checkNetworkConnection() {
+        connectionLiveData = ConnectionLiveData(application)
+
+        connectionLiveData?.observe(this) { isConnected ->
+            val intent = Intent(this, ConnectionLost::class.java)
+
+            if (!isConnected) {
+                isConnectedToInternet = false
+                intent.putExtra("isConnected", false)
+                startActivity(intent)
+                finish()
+            } else {
+                isConnectedToInternet = true
+                onResume()
+            }
+        }
     }
 
     override fun onResume() {
         super.onResume()
 
         val preferences = getPreferences(MODE_PRIVATE)
-        val sharedPref = getSharedPreferences("BookProgress", MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("Book", MODE_PRIVATE)
+        val lovedBooks = sharedPref.getString("lovedBooks", "")
 
-        getBooksInformation(sharedPref)
-        Handler().postDelayed({
-            val layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
-            binding?.apply {
-                recyclerView.layoutManager = layoutManager
-                val adapter = BookRecyclerViewAdapter(bookData, preferences)
-                recyclerView.adapter = adapter
+        binding!!.progressBar.visibility = View.VISIBLE
+        binding!!.refresh.visibility = View.GONE
+
+        if (isConnectedToInternet == true) {
+            getBooksInformation(sharedPref)
+        }
+
+        binding!!.bookPage.setOnClickListener {
+            val recent = preferences.getInt("recent", -1)
+            val intent = Intent(this@MainScreenActivity, PdfViewActivity::class.java)
+
+            if (recent >= 0 && recent <= bookData.size) {
+                if (bookData.size > 1) {
+                    intent.putExtra("bookData", bookData[recent])
+                    intent.putExtra("position", recent)
+                    startActivity(intent)
+                } else {
+                    Handler().postDelayed({
+                        intent.putExtra("bookData", bookData[recent])
+                        intent.putExtra("position", recent)
+                        startActivity(intent)
+                    },7000)
+                }
+            } else {
+                if (bookData.size > 1) {
+                    intent.putExtra("bookData", bookData[0])
+                    intent.putExtra("position", 0)
+                    startActivity(intent)
+                } else {
+                    Handler().postDelayed({
+                        intent.putExtra("bookData", bookData[0])
+                        intent.putExtra("position", 0)
+                        startActivity(intent)
+                    },7000)
+                }
             }
-        }, 5000)
+        }
+
+        if (whichPage == 1) {
+            binding!!.booksLayout.visibility = View.VISIBLE
+            binding!!.lovedLayout.visibility = View.GONE
+
+            if (isConnectedToInternet == true) {
+                Handler().postDelayed({
+                    binding!!.progressBar.visibility = View.GONE
+                    binding!!.refresh.visibility = View.VISIBLE
+
+                    val layoutManager = LinearLayoutManager(
+                        this,
+                        LinearLayoutManager.VERTICAL,
+                        false
+                    )
+
+                    binding?.apply {
+                        booksRecyclerView.layoutManager = layoutManager
+                        val adapter = BookRecyclerViewAdapter(bookData, preferences)
+                        booksRecyclerView.adapter = adapter
+                    }
+                }, 7000)
+            }
+        } else {
+            binding!!.booksLayout.visibility = View.GONE
+            binding!!.lovedLayout.visibility = View.VISIBLE
+
+            if (isConnectedToInternet == true) {
+                Handler().postDelayed({
+                    binding!!.progressBar.visibility = View.GONE
+                    binding!!.refresh.visibility = View.VISIBLE
+
+                    val layoutManager = LinearLayoutManager(
+                        this,
+                        LinearLayoutManager.VERTICAL,
+                        false
+                    )
+
+                    binding?.apply {
+                        lovedRecyclerView.layoutManager = layoutManager
+                        val adapter = LovedRecyclerViewAdapter(bookData, lovedBooks!!)
+                        lovedRecyclerView.adapter = adapter
+                    }
+                }, 7000)
+            }
+        }
     }
 
     @Suppress("UNCHECKED_CAST")

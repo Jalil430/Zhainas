@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="@dimen/_5sdp"
+    android:backgroundTint="@color/background"
     app:cardCornerRadius="@dimen/_3sdp"
     app:cardElevation="0dp"
     app:contentPadding="@dimen/_3sdp">
@@ -14,6 +15,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_10sdp"
         android:layout_marginVertical="@dimen/_5sdp"
+        android:backgroundTint="@color/background"
         app:cardCornerRadius="11dp"
         app:cardElevation="6dp">
 
@@ -49,7 +51,7 @@
                 android:layout_marginTop="@dimen/_8sdp"
                 android:layout_toEndOf="@id/imageView"
                 android:text="Название книги"
-                android:textColor="@color/black"
+                android:textColor="@color/black_white"
                 android:textSize="@dimen/_14ssp"
                 android:textStyle="bold" />
 

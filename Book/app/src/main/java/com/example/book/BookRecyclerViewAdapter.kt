@@ -30,7 +30,7 @@ class BookRecyclerViewAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         bookItemBinding = BookItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         bookRecentBinding = RecentBookItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-
+        Log.d("vnir", "create")
         return when (viewType) {
             0 -> {
                 RecentBook(bookRecentBinding!!, parent.context, preferences)
@@ -42,6 +42,7 @@ class BookRecyclerViewAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        Log.d("vnir", "bind")
         return when (holder.itemViewType) {
             0 -> {
                 val recentBook: RecentBook = holder as RecentBook
@@ -90,50 +91,47 @@ class RecentBook(
     @SuppressLint("UseCompatLoadingForDrawables")
     fun bind0 (bookData: List<BookData>) {
         binding.apply {
+            val book = bookData[recent]
 
-            if (bookData.size > 1) {
-                val book = bookData[recent]
+            with(context).load(book.imageUrl)
+                .listener(object: RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d("ji", "fail")
+                        return false
+                    }
 
-                with(context).load(book.imageUrl)
-                    .listener(object: RequestListener<Drawable> {
-                        override fun onLoadFailed(
-                            e: GlideException?,
-                            model: Any?,
-                            target: Target<Drawable>?,
-                            isFirstResource: Boolean
-                        ): Boolean {
-                            Log.d("ji", "fail")
-                            return false
-                        }
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        imageBarR.visibility = View.GONE
+                        return false
+                    }
+                })
+                .placeholder(android.R.drawable.progress_indeterminate_horizontal)
+                .error(android.R.drawable.stat_notify_error)
+                .into(imageViewR)
 
-                        override fun onResourceReady(
-                            resource: Drawable?,
-                            model: Any?,
-                            target: Target<Drawable>?,
-                            dataSource: DataSource?,
-                            isFirstResource: Boolean
-                        ): Boolean {
-                            imageBarR.visibility = View.GONE
-                            return false
-                        }
-                    })
-                    .placeholder(android.R.drawable.progress_indeterminate_horizontal)
-                    .error(android.R.drawable.stat_notify_error)
-                    .into(imageViewR)
-
-                bookCardR.setOnClickListener {
-                    val intent = Intent(context, PdfViewActivity::class.java)
-                    intent.putExtra("bookData", book)
-                    intent.putExtra("position", recent)
-                    context.startActivity(intent)
-                }
-
-                tvBookNameR.text = book.name
-                tvWriterR.text = book.writer
-                "${book.progress.toInt()}%".also { tvProgressR.text = it }
-                progressBookR.progress = book.progress.toInt()
+            bookCardR.setOnClickListener {
+                val intent = Intent(context, PdfViewActivity::class.java)
+                intent.putExtra("bookData", book)
+                intent.putExtra("position", recent)
+                context.startActivity(intent)
             }
-            }
+
+            tvBookNameR.text = book.name
+            tvWriterR.text = book.writer
+            "${book.progress.toInt()}%".also { tvProgressR.text = it }
+            progressBookR.progress = book.progress.toInt()
+        }
     }
 }
 
@@ -194,7 +192,6 @@ class Book(
 
     fun bind2(bookData: List<BookData>) {
         binding.apply {
-
             val book = bookData[adapterPosition]
 
             with(context).load(book.imageUrl)

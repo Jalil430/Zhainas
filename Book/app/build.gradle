@@ -42,6 +42,15 @@ android {
 
 dependencies {
 
+    def room_version = "2.4.3"
+
+    // Room persistence library
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+
+    // To use Kotlin annotation processing tool (kapt)
+    kapt "androidx.room:room-compiler:$room_version"
+
     // glide library for setting images from url
     implementation ("com.github.bumptech.glide:glide:4.10.0") {
         exclude group: "com.android.support"
@@ -52,8 +61,11 @@ dependencies {
         transitive = true
     }
 
+    // Gson library
+    implementation 'com.google.code.gson:gson:2.9.0'
+
     // pdf library
-    implementation 'com.github.barteksc:android-pdf-viewer:2.8.2'
+    implementation 'com.github.barteksc:android-pdf-viewer:3.2.0-beta.1'
 
     // sdp and ssp library
     implementation 'com.intuit.sdp:sdp-android:1.0.6'

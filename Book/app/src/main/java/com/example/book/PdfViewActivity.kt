@@ -6,20 +6,20 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.AdapterView
 import android.widget.SeekBar
+import android.widget.SeekBar.OnSeekBarChangeListener
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.book.databinding.PdfViewBinding
 import com.google.firebase.storage.FirebaseStorage
 
 @Suppress("NAME_SHADOWING")
-class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
+class PdfViewActivity : AppCompatActivity() {
 
     private var binding: PdfViewBinding? = null
     private var bookData: BookData? = null
     private var position: Int? = null
+    private var currentChapter = -1
+    private var isCheckedLoved = false
 
     private var isConnectedToInternet: Boolean? = null
     private var connectionLiveData: ConnectionLiveData? = null
@@ -28,6 +28,7 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
         const val TAG = "PDF_VIEW_TAG"
     }
 
+    @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.pdf_view)
@@ -38,92 +39,87 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
         val sharedPref = getSharedPreferences("Book", MODE_PRIVATE)
         val lovedBooks = sharedPref.getString("lovedBooks", "")
 
-        var isCheckedLoved = false
         for (i in lovedBooks!!.indices) {
             if (position!!.toString() == lovedBooks[i].toString()) {
                 isCheckedLoved = true
                 binding!!.icLoved.setImageResource(R.drawable.loved_filled)
             }
         }
-
         binding?.apply {
-            var isCheckedSettings = false
-            icSettings.setOnClickListener {
-                if (isCheckedSettings) {
-                    isCheckedSettings = false
-                    icSettings.setImageResource(R.drawable.settings)
-                    bottomLayout.visibility = View.VISIBLE
-                    bottomLayoutSettings.visibility = View.GONE
-                } else {
-                    isCheckedSettings = true
-                    icSettings.setImageResource(R.drawable.settings_filled)
-                    bottomLayout.visibility = View.GONE
-                    bottomLayoutSettings.visibility = View.VISIBLE
-                }
 
-            }
-
-            btnWhiteColor.setOnClickListener {
-                with(sharedPref.edit()) {
-                    putBoolean("isNightMode", false)
-                    apply()
-                }
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            }
-            btnDarkColor.setOnClickListener {
-                with(sharedPref.edit()) {
-                    putBoolean("isNightMode", true)
-                    apply()
-                }
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            icChapters.setOnClickListener {
+                val intent = Intent(this@PdfViewActivity, ChaptersActivity::class.java)
+                intent.putExtra("bookData", bookData)
+                intent.putExtra("currentChapter", currentChapter)
+                intent.putExtra("isCheckedLoved", isCheckedLoved)
+                startActivityForResult(intent, 1)
             }
 
             icLoved.setOnClickListener {
-                if (isCheckedLoved) {
-                    icLoved.setImageResource(R.drawable.loved)
-                    isCheckedLoved = false
-
-                    val lovedBooks = sharedPref.getString("lovedBooks", "")
-                    var temp = ""
-
-                    for (i in lovedBooks!!.indices) {
-                        if (position!!.toString() != lovedBooks[i].toString()) {
-                            temp += lovedBooks[i].toString()
-                        }
-                    }
-                    with(sharedPref.edit()) {
-                        putString("lovedBooks", temp)
-                        apply()
-                    }
-                } else {
-                    icLoved.setImageResource(R.drawable.loved_filled)
-                    isCheckedLoved = true
-
-                    val lovedBooks = sharedPref.getString("lovedBooks", "")
-
-                    with(sharedPref.edit()) {
-                        putString("lovedBooks", lovedBooks.plus("$position"))
-                        apply()
-                    }
-                }
+                icLovedClickListener("A")
             }
         }
 
         checkNetworkConnection()
-        recyclerViewInitialization()
     }
 
-    private fun recyclerViewInitialization() {
-        val layoutManager = LinearLayoutManager(
-            this,
-            LinearLayoutManager.VERTICAL,
-            false
-        )
+    private fun icLovedClickListener(whereCalled: String) {
+        val sharedPref = getSharedPreferences("Book", MODE_PRIVATE)
 
-        binding?.apply {
-            chaptersRecyclerView.layoutManager = layoutManager
-            val adapter = ChaptersRecyclerViewAdapter(bookData!!)
-            chaptersRecyclerView.adapter = adapter
+        if (whereCalled == "A") {
+            if (isCheckedLoved) {
+                binding!!.icLoved.setImageResource(R.drawable.loved)
+                isCheckedLoved = false
+
+                val lovedBooks = sharedPref.getString("lovedBooks", "")
+                var temp = ""
+
+                for (i in lovedBooks!!.indices) {
+                    if (position!!.toString() != lovedBooks[i].toString()) {
+                        temp += lovedBooks[i].toString()
+                    }
+                }
+                with(sharedPref.edit()) {
+                    putString("lovedBooks", temp)
+                    apply()
+                }
+            } else {
+                binding!!.icLoved.setImageResource(R.drawable.loved_filled)
+                isCheckedLoved = true
+
+                val lovedBooks = sharedPref.getString("lovedBooks", "")
+
+                with(sharedPref.edit()) {
+                    putString("lovedBooks", lovedBooks.plus("$position"))
+                    apply()
+                }
+            }
+        } else {
+            if (isCheckedLoved) {
+                binding!!.icLoved.setImageResource(R.drawable.loved_filled)
+
+                val lovedBooks = sharedPref.getString("lovedBooks", "")
+
+                with(sharedPref.edit()) {
+                    putString("lovedBooks", lovedBooks.plus("$position"))
+                    apply()
+                }
+            } else {
+                binding!!.icLoved.setImageResource(R.drawable.loved)
+
+                val lovedBooks = sharedPref.getString("lovedBooks", "")
+                var temp = ""
+
+                for (i in lovedBooks!!.indices) {
+                    if (position!!.toString() != lovedBooks[i].toString()) {
+                        temp += lovedBooks[i].toString()
+                    }
+                }
+                with(sharedPref.edit()) {
+                    putString("lovedBooks", temp)
+                    apply()
+                }
+            }
         }
     }
 
@@ -145,6 +141,8 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
         }
     }
 
+    @Suppress("DEPRECATION")
+    @SuppressLint("UseCompatLoadingForDrawables")
     override fun onResume() {
         super.onResume()
 
@@ -160,21 +158,34 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
                 onBackPressed()
             }
 
-            currentPageBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
-                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, p2: Boolean) {
-                    pdfView.positionOffset = progress.toFloat() / 100F
+            var isTracking = false
+            currentPageBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+                override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
+                    if (isTracking) {
+                        pdfView.positionOffset = progress.toFloat() / 100F
+                    }
                 }
 
                 override fun onStartTrackingTouch(p0: SeekBar?) {
+                    isTracking = true
+                    currentPageBar.thumb = resources.getDrawable(R.drawable.custom_thumb_big)
                 }
 
                 override fun onStopTrackingTouch(p0: SeekBar?) {
+                    isTracking = false
+                    currentPageBar.thumb = resources.getDrawable(R.drawable.custom_thumb_small)
                 }
             })
-        }
 
-        if (bookData!!.name != "Не удалось загрузить данные с сервера(") {
-            bookUrl?.loadBookFromUrl(sharedPref!!, position!!, chaptersPage, chaptersName)
+            if (bookData!!.name != "Не удалось загрузить данные с сервера(") {
+                bookUrl?.loadBookFromUrl(
+                    sharedPref!!,
+                    position!!,
+                    chaptersPage,
+                    chaptersName,
+                    isTracking
+                )
+            }
         }
     }
 
@@ -183,7 +194,8 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
         sharedPref: SharedPreferences,
         position: Int,
         chaptersPage: ArrayList<Int>?,
-        chaptersName: ArrayList<String>?
+        chaptersName: ArrayList<String>?,
+        isTracking: Boolean
     ) {
         Log.d(TAG, this)
         val reference = FirebaseStorage.getInstance().getReferenceFromUrl(this)
@@ -194,6 +206,7 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
                 binding!!.pdfView.fromBytes(bytes)
                     .defaultPage(sharedPref.getInt("lastPage of ${position + 1}", 0))
                     .swipeHorizontal(true)
+                    .pageFling(true)
                     .onPageChange {page, pageCount ->
 
                         val currentPage = page + 1
@@ -211,23 +224,26 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
                             apply()
                         }
 
-                        binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0F).toInt()
+                        if (!isTracking) {
+                            binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0F).toInt()
+                        }
 
                         for (i in 0..chaptersPage!!.size) {
                             if (i + 1 < chaptersPage.size) {
                                 if (currentPage >= chaptersPage[i] && currentPage < chaptersPage[i + 1]) {
                                     binding!!.tvChapterName.text = chaptersName!![i]
+                                    currentChapter = i
                                 }
 
                                 if (currentPage < chaptersPage[0]) {
-                                    binding!!.tvChapterName.text = "Йоьхье"
+                                    binding!!.tvChapterName.text = ""
+                                    currentChapter = -1
                                 }
                             } else if (currentPage >= chaptersPage[chaptersPage.size - 1]) {
                                 binding!!.tvChapterName.text = chaptersName!![chaptersName.size - 1]
+                                currentChapter = chaptersName.size - 1
                             }
                         }
-
-
                     }
                     .onError { t ->
                         Log.d(TAG, "loadBookFromUrl: ${t.message}")
@@ -237,9 +253,7 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
                     }
                     .onLoad {
                         binding?.apply {
-                            icSettings.visibility = View.VISIBLE
                             icChapters.visibility = View.VISIBLE
-                            icLoved.visibility = View.VISIBLE
                             currentPageBar.visibility = View.VISIBLE
                             pdfBar.visibility = View.GONE
                         }
@@ -252,18 +266,31 @@ class PdfViewActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener 
             }
     }
 
-    @Suppress("SENSELESS_COMPARISON", "UNCHECKED_CAST")
-    override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-        val chaptersPage = bookData?.chaptersPage
-        val pageCount = binding?.pdfView?.pageCount?.toFloat()
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java", ReplaceWith(
+        "super.onActivityResult(requestCode, resultCode, data)",
+        "androidx.appcompat.app.AppCompatActivity"
+    )
+    )
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
 
-        if (chaptersPage != null && pageCount!! > 0F) {
-            binding?.pdfView?.jumpTo(chaptersPage[position] - 1)
-        } else {
-            Log.d(TAG, "chapters page/ pageCount = null")
+        if (requestCode == 1) {
+            if (resultCode == RESULT_OK) {
+                val newChapter = data?.getIntExtra("newChapter", -1)
+
+                val chaptersPage = bookData?.chaptersPage
+                val pageCount = binding?.pdfView?.pageCount?.toFloat()
+
+                if (chaptersPage != null && pageCount!! > 0F && newChapter!! >= 0) {
+                    binding?.pdfView?.jumpTo(chaptersPage[newChapter] - 1)
+                } else {
+                    Log.d(TAG, "chapters page/ pageCount = null")
+                }
+
+                isCheckedLoved = data?.getBooleanExtra("isCheckedLoved", false) !!
+                icLovedClickListener("B")
+            }
         }
-    }
-
-    override fun onNothingSelected(parent: AdapterView<*>?) {
     }
 }

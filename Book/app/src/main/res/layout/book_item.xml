@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="@dimen/_5sdp"
+    android:layout_marginTop="@dimen/_4sdp"
     android:backgroundTint="@color/background"
     app:cardCornerRadius="@dimen/_3sdp"
     app:cardElevation="0dp"
@@ -17,7 +17,7 @@
         android:layout_marginVertical="@dimen/_5sdp"
         android:backgroundTint="@color/background"
         app:cardCornerRadius="11dp"
-        app:cardElevation="6dp">
+        app:cardElevation="4dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -47,9 +47,14 @@
                 android:id="@+id/tvBookName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
                 android:layout_marginStart="@dimen/_13sdp"
-                android:layout_marginTop="@dimen/_8sdp"
+                android:layout_marginTop="@dimen/_9sdp"
+                android:layout_marginEnd="@dimen/_26sdp"
                 android:layout_toEndOf="@id/imageView"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:singleLine="true"
                 android:text="Название книги"
                 android:textColor="@color/black_white"
                 android:textSize="@dimen/_14ssp"
@@ -59,12 +64,12 @@
                 android:id="@+id/tvWriter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_above="@+id/tvProgress"
-                android:layout_below="@+id/tvBookName"
+                android:layout_centerVertical="true"
                 android:layout_marginStart="@dimen/_13sdp"
                 android:layout_marginTop="@dimen/_5sdp"
                 android:layout_toStartOf="@+id/icArrowGO"
                 android:layout_toEndOf="@id/imageView"
+                android:textColor="@color/grey_white"
                 android:text="Написал"
                 android:textSize="@dimen/_12ssp" />
 
@@ -74,12 +79,11 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:layout_marginStart="@dimen/_13sdp"
-                android:layout_marginBottom="@dimen/_7sdp"
+                android:layout_marginBottom="@dimen/_12sdp"
                 android:layout_toEndOf="@id/imageView"
                 android:text="Прочитано 0%"
                 android:textColor="@color/foreground"
-                android:textSize="@dimen/_11ssp"
-                android:textStyle="bold" />
+                android:textSize="@dimen/_11ssp" />
 
             <ProgressBar
                 android:id="@+id/progressBook"
@@ -89,7 +93,7 @@
                 android:layout_below="@+id/tvProgress"
                 android:layout_alignParentBottom="true"
                 android:layout_marginStart="@dimen/_13sdp"
-                android:layout_marginBottom="@dimen/_8sdp"
+                android:layout_marginBottom="@dimen/_15sdp"
                 android:layout_toEndOf="@+id/imageView"
                 android:progress="50"
                 android:progressTint="@color/foreground" />

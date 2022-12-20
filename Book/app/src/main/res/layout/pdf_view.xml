@@ -27,24 +27,14 @@
             tools:ignore="ContentDescription" />
 
         <ImageView
-            android:id="@+id/icSettings"
-            android:layout_width="@dimen/_45sdp"
-            android:layout_height="@dimen/_45sdp"
-            android:layout_centerVertical="true"
-            android:layout_toStartOf="@id/icChapters"
-            android:visibility="gone"
-            android:padding="@dimen/_11sdp"
-            app:srcCompat="@drawable/settings" />
-
-        <ImageView
             android:id="@+id/icChapters"
             android:layout_width="@dimen/_45sdp"
             android:layout_height="@dimen/_45sdp"
             android:layout_centerVertical="true"
             android:layout_toStartOf="@id/icLoved"
+            android:padding="@dimen/_9sdp"
             android:visibility="gone"
-            android:padding="@dimen/_11sdp"
-            app:srcCompat="@drawable/menu" />
+            app:srcCompat="@drawable/menu"/>
 
         <ImageView
             android:id="@+id/icLoved"
@@ -52,7 +42,8 @@
             android:layout_height="@dimen/_45sdp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:visibility="gone"
+            android:layout_marginEnd="@dimen/_5sdp"
+            android:visibility="visible"
             android:padding="@dimen/_11sdp"
             app:srcCompat="@drawable/loved" />
 
@@ -62,15 +53,15 @@
         android:id="@+id/pdfLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:visibility="invisible"
         android:clickable="false"
-        app:layout_constraintBottom_toTopOf="@+id/shadowR"
+        app:layout_constraintBottom_toTopOf="@+id/bottomLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topLayout">
 
         <com.github.barteksc.pdfviewer.PDFView
             android:id="@+id/pdfView"
+            android:background="@color/background"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
@@ -83,31 +74,13 @@
     </RelativeLayout>
 
     <RelativeLayout
-        android:id="@+id/chaptersLayout"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:visibility="visible"
-        app:layout_constraintBottom_toTopOf="@+id/shadowR"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topLayout">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/chaptersRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-        </androidx.recyclerview.widget.RecyclerView>
-    </RelativeLayout>
-
-    <RelativeLayout
         android:id="@+id/shadowR"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_25sdp"
+        android:layout_height="@dimen/_42sdp"
         android:layout_alignParentBottom="true"
         android:background="@drawable/bottom_layout_shadow"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="@dimen/_85sdp"
+        android:layout_marginBottom="@dimen/_79sdp"
         app:layout_constraintTop_toBottomOf="@+id/pdfLayout">
     </RelativeLayout>
 
@@ -122,104 +95,67 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-            <TextView
-                android:id="@+id/tvBookNamePdf"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/_3sdp"
-                android:text="Название книги..."
-                android:textColor="#323232"
-                android:textSize="@dimen/_15ssp"
-                android:textStyle="bold" />
+        <TextView
+            android:id="@+id/tvBookNamePdf"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginEnd="@dimen/_45sdp"
+            android:text="Название книги..."
+            android:textColor="@color/black_white"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textSize="@dimen/_15ssp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvPages"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_marginTop="@dimen/_55sdp"
-                android:layout_marginEnd="@dimen/_19sdp"
-                android:text="Загрузка..."
-                android:textSize="@dimen/_13ssp"
-                android:textStyle="bold" />
+        <TextView
+            android:id="@+id/tvPages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="@dimen/_19sdp"
+            android:layout_marginBottom="@dimen/_22sdp"
+            android:text="Загрузка..."
+            android:textColor="@color/grey_white"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textSize="@dimen/_13ssp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvChapterName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/currentPageBar"
+            android:layout_alignParentBottom="true"
             android:layout_alignParentStart="true"
-            android:layout_marginStart="@dimen/_3sdp"
-            android:layout_marginTop="@dimen/_40sdp"
-            android:layout_marginBottom="16dp"
+            android:textColor="@color/grey_white"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginBottom="@dimen/_22sdp"
             android:layout_toStartOf="@+id/tvPages"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:singleLine="true"
             android:allowUndo="false"
             android:text="Название главы..."
             android:textSize="@dimen/_13ssp"
             android:textStyle="bold" />
 
-            <SeekBar
-                android:id="@+id/currentPageBar"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/_20sdp"
-                android:layout_alignParentBottom="true"
-                android:layout_marginHorizontal="@dimen/_3sdp"
-                android:paddingVertical="@dimen/_8sdp"
-                android:progress="0"
-                android:progressDrawable="@drawable/seekbar_style"
-                android:splitTrack="false"
-                android:visibility="gone"
-                android:thumb="@drawable/custom_thumb" />
-
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:id="@+id/bottomLayoutSettings"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/_100sdp"
-        android:layout_alignParentBottom="true"
-        android:background="@drawable/bottom_navigation_view"
-        android:padding="@dimen/_5sdp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <ImageView
-            android:id="@+id/btnSelectedColor"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toStartOf="@id/btnWhiteColor"
-            android:layout_marginTop="@dimen/_40sdp"
-            app:srcCompat="@drawable/btn_selected_color"
-            tools:ignore="ContentDescription" />
-
-        <ImageView
-            android:id="@+id/btnWhiteColor"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="@dimen/_40sdp"
-            app:srcCompat="@drawable/btn_white_color" />
-
-        <ImageView
-            android:id="@+id/btnDarkColor"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toEndOf="@id/btnWhiteColor"
-            android:layout_marginTop="@dimen/_40sdp"
-            app:srcCompat="@drawable/btn_dark_color" />
-
-        <TextView
-            android:id="@+id/textView95"
+        <SeekBar
+            android:id="@+id/currentPageBar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_5sdp"
-            android:layout_marginTop="@dimen/_5sdp"
-            android:text="Цвет фона"
-            android:textColor="#323232"
-            android:textSize="@dimen/_15ssp"
-            android:textStyle="bold" />
+            android:layout_height="@dimen/_20sdp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginHorizontal="@dimen/_4sdp"
+            android:paddingVertical="@dimen/_8sdp"
+            android:progress="50"
+            android:progressDrawable="@drawable/seekbar_style"
+            android:splitTrack="false"
+            android:thumb="@drawable/custom_thumb_small"
+            android:visibility="gone" />
 
     </RelativeLayout>
 

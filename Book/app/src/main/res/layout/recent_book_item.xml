@@ -3,11 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="@dimen/_5sdp"
+    android:layout_marginTop="@dimen/_3sdp"
     app:cardCornerRadius="@dimen/_3sdp"
     android:backgroundTint="@color/background"
-    app:cardElevation="0dp"
-    app:contentPadding="@dimen/_3sdp">
+    app:cardElevation="0dp">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/bookCardR"
@@ -16,22 +15,24 @@
         android:layout_marginHorizontal="@dimen/_6sdp"
         android:layout_marginVertical="@dimen/_2sdp"
         android:backgroundTint="@color/background"
-
         app:cardCornerRadius="11dp"
-        app:cardElevation="6dp">
+        app:cardElevation="0dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="@dimen/_153sdp"
+            android:padding="@dimen/_4sdp"
             android:layout_gravity="center">
 
             <com.google.android.material.imageview.ShapeableImageView
                 android:id="@+id/imageViewR"
                 android:layout_width="@dimen/_120sdp"
                 android:layout_height="@dimen/_153sdp"
+                android:background="@drawable/ic_launcher_foreground"
+                android:padding="@dimen/_4sdp"
+                android:elevation="4dp"
                 android:scaleType="centerCrop"
-                app:shapeAppearanceOverlay="@style/roundImageView"
-                app:srcCompat="@drawable/ic_launcher_foreground" />
+                app:shapeAppearanceOverlay="@style/roundImageView" />
 
             <ProgressBar
                 android:id="@+id/imageBarR"
@@ -49,19 +50,27 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_13sdp"
-                android:layout_marginTop="@dimen/_21sdp"
+                android:layout_marginTop="@dimen/_41sdp"
                 android:layout_toEndOf="@id/imageViewR"
                 android:textSize="@dimen/_9ssp"
-                android:textStyle="bold"
-                android:text="Вы недавно читали:" />
+                android:textColor="@color/grey_white"
+                android:text="Вы недавно читали:"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:singleLine="true"/>
 
             <TextView
                 android:id="@+id/tvBookNameR"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
                 android:layout_marginStart="@dimen/_13sdp"
-                android:layout_marginTop="@dimen/_35sdp"
+                android:layout_marginTop="@dimen/_60sdp"
+                android:layout_marginEnd="@dimen/_8sdp"
                 android:layout_toEndOf="@id/imageViewR"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:singleLine="true"
                 android:text="Название книги"
                 android:textColor="@color/black_white"
                 android:textSize="@dimen/_13ssp"
@@ -73,9 +82,14 @@
                 android:layout_height="wrap_content"
                 android:layout_above="@+id/tvProgressR"
                 android:layout_below="@+id/tvBookNameR"
+                android:layout_alignParentEnd="true"
                 android:layout_marginStart="@dimen/_13sdp"
                 android:layout_marginTop="@dimen/_10sdp"
+                android:layout_marginEnd="@dimen/_10sdp"
                 android:layout_toEndOf="@id/imageViewR"
+                android:textColor="@color/grey_white"
+                android:maxLines="2"
+                android:ellipsize="end"
                 android:text="Написал"
                 android:textSize="@dimen/_11ssp" />
 
@@ -88,8 +102,8 @@
                 android:layout_marginBottom="@dimen/_10sdp"
                 android:layout_toEndOf="@id/imageViewR"
                 android:text="0%"
-                android:textSize="@dimen/_11ssp"
-                android:textStyle="bold" />
+                android:textColor="@color/grey_white"
+                android:textSize="@dimen/_11ssp" />
 
             <ProgressBar
                 android:id="@+id/progressBookR"
@@ -113,8 +127,7 @@
                 android:layout_toStartOf="@id/icArrowGoR"
                 android:text="Продолжить"
                 android:textSize="@dimen/_11ssp"
-                android:textColor="@color/foreground"
-                android:textStyle="bold" />
+                android:textColor="@color/foreground" />
 
             <ImageView
                 android:id="@+id/icArrowGoR"

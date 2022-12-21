@@ -5,19 +5,13 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.room.Room
 import com.example.book.databinding.MainScreenBinding
-import com.example.book.localRoomDatabase.Books
 import com.example.book.localRoomDatabase.BooksDao
 import com.example.book.localRoomDatabase.BooksRoomDatabase
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,14 +19,15 @@ import kotlinx.coroutines.launch
 class MainScreenActivity : AppCompatActivity() {
 
     private var binding: MainScreenBinding? = null
-    private var bookData: List<BookData>? = null
     private var whichPage = 0
 
     private var isConnectedToInternet: Boolean? = null
     private var connectionLiveData: ConnectionLiveData? = null
 
+    private var bookData: List<BookData>? = null
     private var localDatabase: BooksRoomDatabase? = null
     private var booksDao: BooksDao? = null
+    private var childrenCount = 0
 
     @SuppressLint("MissingInflatedId")
     @Suppress("DEPRECATION")
@@ -42,15 +37,9 @@ class MainScreenActivity : AppCompatActivity() {
         binding = MainScreenBinding.bind(findViewById(R.id.rootMainScreen))
 
         whichPage = 1
+        childrenCount = intent.getIntExtra("childrenCount", 0)
+        initializeDatabaseAndBookData()
         checkNetworkConnection()
-
-        CoroutineScope(Dispatchers.IO).launch {
-            localDatabase = Room.databaseBuilder(
-                applicationContext,
-                BooksRoomDatabase::class.java, "books-database"
-            ).build()
-            booksDao = localDatabase?.userDao()
-        }
 
         binding?.apply {
             homePage.setOnClickListener {
@@ -72,6 +61,98 @@ class MainScreenActivity : AppCompatActivity() {
         }
     }
 
+    private fun initializeDatabaseAndBookData() {
+        CoroutineScope(Dispatchers.IO).launch {
+            localDatabase = Room.databaseBuilder(
+                applicationContext,
+                BooksRoomDatabase::class.java, "books-database"
+            ).build()
+            booksDao = localDatabase?.userDao()
+
+            bookData = booksDao!!.get().bookData
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        binding!!.progressBar.visibility = View.VISIBLE
+
+        val preferences = getPreferences(MODE_PRIVATE)
+        val sharedPref = getSharedPreferences("Book", MODE_PRIVATE)
+        val lovedBooks = sharedPref.getString("lovedBooks", "")
+
+        val progress = arrayListOf<Float>()
+        for (i in 0..childrenCount) {
+            progress.add(
+                sharedPref.getFloat("${i + 1}", 0F)
+            )
+        }
+
+        Handler().postDelayed({
+            if (bookData != null) {
+                initializeView(bookData!!, preferences, lovedBooks, progress)
+            } else {
+                onResume()
+            }
+        }, 1200)
+    }
+
+    private fun initializeView(
+        bookData: List<BookData>,
+        preferences: SharedPreferences,
+        lovedBooks: String?,
+        progress: ArrayList<Float>
+    ) {
+        binding!!.progressBar.visibility = View.GONE
+
+        binding!!.bookPage.setOnClickListener {
+            val recent = preferences.getInt("recent", -1)
+            val intent = Intent(this@MainScreenActivity, PdfViewActivity::class.java)
+
+            if (recent >= 0 && recent <= bookData.size) {
+                intent.putExtra("bookData", bookData[recent])
+                intent.putExtra("position", recent)
+                intent.putExtra("progress", progress[recent])
+                startActivity(intent)
+            } else {
+                intent.putExtra("bookData", bookData[0])
+                intent.putExtra("position", 0)
+                intent.putExtra("progress", progress[0])
+                startActivity(intent)
+            }
+        }
+
+        if (whichPage == 1) {
+            binding!!.booksLayout.visibility = View.VISIBLE
+            binding!!.lovedLayout.visibility = View.GONE
+            val layoutManager = LinearLayoutManager(
+                this@MainScreenActivity,
+                LinearLayoutManager.VERTICAL,
+                false
+            )
+
+            binding?.apply {
+                booksRecyclerView.layoutManager = layoutManager
+                val adapter = BookRecyclerViewAdapter(bookData, preferences, progress)
+                booksRecyclerView.adapter = adapter
+            }
+        } else {
+            binding!!.booksLayout.visibility = View.GONE
+            binding!!.lovedLayout.visibility = View.VISIBLE
+            val layoutManager = LinearLayoutManager(
+                this@MainScreenActivity,
+                LinearLayoutManager.VERTICAL,
+                false
+            )
+
+            binding?.apply {
+                lovedRecyclerView.layoutManager = layoutManager
+                val adapter = LovedRecyclerViewAdapter(bookData, lovedBooks!!, progress)
+                lovedRecyclerView.adapter = adapter
+            }
+        }
+    }
+
     private fun checkNetworkConnection() {
         connectionLiveData = ConnectionLiveData(application)
 
@@ -88,265 +169,5 @@ class MainScreenActivity : AppCompatActivity() {
                 onResume()
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-
-        val preferences = getPreferences(MODE_PRIVATE)
-        val sharedPref = getSharedPreferences("Book", MODE_PRIVATE)
-        val lovedBooks = sharedPref.getString("lovedBooks", "")
-
-        binding!!.progressBar.visibility = View.VISIBLE
-
-        if (isConnectedToInternet == true) {
-            getBooksInformation()
-            Handler().postDelayed({
-                if (bookData == null) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        bookData = booksDao!!.get().bookData.bookDataList
-                    }
-                    Handler().postDelayed({
-                        initializeView(bookData!!, preferences, lovedBooks)
-                    }, 1000)
-                }
-            }, 8000)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun getBooksInformation() {
-        val ref = FirebaseDatabase.getInstance().reference
-
-        val preferences = getPreferences(MODE_PRIVATE)
-        val sharedPref = getSharedPreferences("Book", MODE_PRIVATE)
-        val lovedBooks = sharedPref.getString("lovedBooks", "")
-
-        ref.addListenerForSingleValueEvent(object: ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                fun saveData(): List<BookData> {
-                    val book1: BookData
-                    val book2: BookData
-                    val book3: BookData
-                    val book4: BookData
-                    val book5: BookData
-                    val book6: BookData
-                    val book7: BookData
-                    val book8: BookData
-                    val book9: BookData
-                    val book10: BookData
-                    val book11: BookData
-
-                    snapshot.child("1").apply {
-                        book1 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("1", 0F)
-                        )
-                    }
-                    snapshot.child("2").apply {
-                        book2 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("2", 0F)
-                        )
-                    }
-                    snapshot.child("3").apply {
-                        book3 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("3", 0F)
-                        )
-                    }
-                    snapshot.child("4").apply {
-                        book4 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("4", 0F)
-                        )
-                    }
-                    snapshot.child("5").apply {
-                        book5 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("5", 0F)
-                        )
-                    }
-                    snapshot.child("6").apply {
-                        book6 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("6", 0F)
-                        )
-                    }
-                    snapshot.child("7").apply {
-                        book7 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("7", 0F)
-                        )
-                    }
-                    snapshot.child("8").apply {
-                        book8 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("8", 0F)
-                        )
-                    }
-                    snapshot.child("9").apply {
-                        book9 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("9", 0F)
-                        )
-                    }
-                    snapshot.child("10").apply {
-                        book10 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("10", 0F)
-                        )
-                    }
-                    snapshot.child("11").apply {
-                        book11 = BookData(
-                            this.child("Name").value.toString(),
-                            this.child("Writer").value.toString(),
-                            this.child("Book url").value.toString(),
-                            this.child("Image url").value.toString(),
-                            this.child("Chapters page").value as ArrayList<Int>,
-                            this.child("Chapters name").value as ArrayList<String>,
-                            sharedPref.getFloat("11", 0F)
-                        )
-                    }
-
-                    bookData = listOf(
-                        book1,
-                        book2,
-                        book3,
-                        book4,
-                        book5,
-                        book6,
-                        book7,
-                        book8,
-                        book9,
-                        book10,
-                        book11
-                    )
-
-                    return bookData!!
-                }
-
-                val bookData = saveData()
-                saveToDownloadsFolder(bookData)
-                initializeView(bookData, preferences, lovedBooks)
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.d(TAG, error.message)
-            }
-        })
-    }
-
-    private fun initializeView(
-        bookData: List<BookData>,
-        preferences: SharedPreferences,
-        lovedBooks: String?
-    ) {
-        binding!!.progressBar.visibility = View.GONE
-
-        binding!!.bookPage.setOnClickListener {
-            val recent = preferences.getInt("recent", -1)
-            val intent = Intent(this@MainScreenActivity, PdfViewActivity::class.java)
-
-            if (recent >= 0 && recent <= bookData.size) {
-                intent.putExtra("bookData", bookData[recent])
-                intent.putExtra("position", recent)
-                startActivity(intent)
-            } else {
-                intent.putExtra("bookData", bookData[0])
-                intent.putExtra("position", 0)
-                startActivity(intent)
-            }
-        }
-
-        if (whichPage == 1) {
-            binding!!.booksLayout.visibility = View.VISIBLE
-            binding!!.lovedLayout.visibility = View.GONE
-            val layoutManager = LinearLayoutManager(
-                this@MainScreenActivity,
-                LinearLayoutManager.VERTICAL,
-                false
-            )
-
-            binding?.apply {
-                booksRecyclerView.layoutManager = layoutManager
-                val adapter = BookRecyclerViewAdapter(bookData, preferences)
-                booksRecyclerView.adapter = adapter
-            }
-        } else {
-            binding!!.booksLayout.visibility = View.GONE
-            binding!!.lovedLayout.visibility = View.VISIBLE
-            val layoutManager = LinearLayoutManager(
-                this@MainScreenActivity,
-                LinearLayoutManager.VERTICAL,
-                false
-            )
-
-            binding?.apply {
-                lovedRecyclerView.layoutManager = layoutManager
-                val adapter = LovedRecyclerViewAdapter(bookData, lovedBooks!!)
-                lovedRecyclerView.adapter = adapter
-            }
-        }
-    }
-
-    private fun saveToDownloadsFolder(bookData: List<BookData>) {
-        CoroutineScope(Dispatchers.IO).launch {
-            booksDao?.insertAll(Books(null, BookDataList(bookData)))
-        }
-    }
-
-    private companion object {
-        const val TAG = "MAIN_SCREEN_TAG"
     }
 }

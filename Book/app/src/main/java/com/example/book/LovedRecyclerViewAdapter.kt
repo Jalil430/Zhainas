@@ -16,7 +16,8 @@ import com.example.book.databinding.BookItemBinding
 
 class LovedRecyclerViewAdapter(
     private val bookData: List<BookData>,
-    private val lovedBooks: String
+    private val lovedBooks: String,
+    private val progress: ArrayList<Float>
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var binding: BookItemBinding? = null
@@ -24,7 +25,7 @@ class LovedRecyclerViewAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         binding = BookItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
 
-        return LovedBooksList(binding!!, parent.context, lovedBooks)
+        return LovedBooksList(binding!!, parent.context, lovedBooks, progress)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -40,7 +41,8 @@ class LovedRecyclerViewAdapter(
 class LovedBooksList(
     private val binding: BookItemBinding,
     private val context: Context,
-    private val lovedBooks: String
+    private val lovedBooks: String,
+    private val progress: ArrayList<Float>
 ) : RecyclerView.ViewHolder(binding.root) {
 
     fun bind(bookData: List<BookData>) {
@@ -48,6 +50,7 @@ class LovedBooksList(
 
             if (Character.getNumericValue(lovedBooks[adapterPosition]) >= 0) {
                 val book = bookData[Character.getNumericValue(lovedBooks[adapterPosition])]
+                val progress = progress[Character.getNumericValue(lovedBooks[adapterPosition])].toInt()
 
                 Glide.with(context).load(book.imageUrl)
                     .listener(object: RequestListener<Drawable> {
@@ -83,8 +86,8 @@ class LovedBooksList(
 
                 tvBookName.text = book.name
                 tvWriter.text = book.writer
-                "Прочитать: ${book.progress.toInt()}%".also { tvProgress.text = it }
-                progressBook.progress = book.progress.toInt()
+                "Прочитать: $progress%".also { tvProgress.text = it }
+                progressBook.progress = progress
             }
         }
     }

@@ -1,18 +1,27 @@
 package com.example.book
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.net.ConnectivityManager
 import android.os.Bundle
+import android.os.Environment
+import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.example.book.databinding.PdfViewBinding
 import com.google.firebase.storage.FirebaseStorage
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
-@Suppress("NAME_SHADOWING")
+@Suppress("NAME_SHADOWING", "DEPRECATION")
 class PdfViewActivity : AppCompatActivity() {
 
     private var binding: PdfViewBinding? = null
@@ -29,6 +38,7 @@ class PdfViewActivity : AppCompatActivity() {
     }
 
     @Suppress("DEPRECATION")
+    @SuppressLint("UseCompatLoadingForDrawables")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.pdf_view)
@@ -60,7 +70,88 @@ class PdfViewActivity : AppCompatActivity() {
             }
         }
 
-        checkNetworkConnection()
+//        checkNetworkConnection()
+        isConnectedToInternet = isNetworkConnected()
+
+        val bookUrl = bookData?.bookUrl
+        val bookName = bookData?.name
+        val chaptersPage = bookData?.chaptersPage
+        val chaptersName = bookData?.chaptersName
+
+        binding?.apply {
+            tvBookNamePdf.text = bookName
+            icBack.setOnClickListener {
+                onBackPressed()
+            }
+
+            var isTracking = false
+            currentPageBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
+                override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
+                    if (isTracking) {
+                        pdfView.positionOffset = progress.toFloat() / 100F
+                    }
+                }
+
+                override fun onStartTrackingTouch(p0: SeekBar?) {
+                    isTracking = true
+                    currentPageBar.thumb = resources.getDrawable(R.drawable.custom_thumb_big)
+                }
+
+                override fun onStopTrackingTouch(p0: SeekBar?) {
+                    isTracking = false
+                    currentPageBar.thumb = resources.getDrawable(R.drawable.custom_thumb_small)
+                }
+            })
+
+            if (bookData!!.name != "Не удалось загрузить данные с сервера(") {
+                val savedBookUrl = sharedPref.getString("bookUrl$position", "")
+                if (!isConnectedToInternet!!) {
+                    if (bookUrl == savedBookUrl) {
+                        if (ContextCompat.checkSelfPermission(
+                                this@PdfViewActivity,
+                                android.Manifest.permission.READ_EXTERNAL_STORAGE
+                            ) == PackageManager.PERMISSION_GRANTED) {
+
+                            loadBookFromDownloadsFolder(
+                                sharedPref,
+                                position,
+                                chaptersPage,
+                                chaptersName,
+                                isTracking
+                            )
+
+                        } else {
+                            requestStoragePermissionLauncher(
+                                bookUrl!!, sharedPref, chaptersPage, chaptersName, isTracking, 2
+                            ).launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                        }
+
+                    } else {
+                        if (ContextCompat.checkSelfPermission(
+                                this@PdfViewActivity,
+                                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            ) == PackageManager.PERMISSION_GRANTED) {
+
+                            bookUrl?.loadBookFromUrl(
+                                sharedPref!!,
+                                position!!,
+                                chaptersPage,
+                                chaptersName,
+                                isTracking
+                            )
+//                        Handler().postDelayed({
+//
+//                        }, 15000)
+
+                        } else {
+                            requestStoragePermissionLauncher(
+                                bookUrl!!, sharedPref, chaptersPage, chaptersName, isTracking, 1
+                            ).launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun icLovedClickListener(whereCalled: String) {
@@ -123,6 +214,11 @@ class PdfViewActivity : AppCompatActivity() {
         }
     }
 
+    private fun isNetworkConnected(): Boolean {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        return cm.activeNetworkInfo != null && cm.activeNetworkInfo!!.isConnected
+    }
+
     private fun checkNetworkConnection() {
         connectionLiveData = ConnectionLiveData(application)
 
@@ -141,55 +237,27 @@ class PdfViewActivity : AppCompatActivity() {
         }
     }
 
-    @Suppress("DEPRECATION")
-    @SuppressLint("UseCompatLoadingForDrawables")
-    override fun onResume() {
-        super.onResume()
-
-        val sharedPref = getSharedPreferences("Book", MODE_PRIVATE)
-        val bookUrl = bookData?.bookUrl
-        val bookName = bookData?.name
-        val chaptersPage = bookData?.chaptersPage
-        val chaptersName = bookData?.chaptersName
-
-        binding?.apply {
-            tvBookNamePdf.text = bookName
-            icBack.setOnClickListener {
-                onBackPressed()
-            }
-
-            var isTracking = false
-            currentPageBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
-                override fun onProgressChanged(p0: SeekBar?, progress: Int, p2: Boolean) {
-                    if (isTracking) {
-                        pdfView.positionOffset = progress.toFloat() / 100F
-                    }
-                }
-
-                override fun onStartTrackingTouch(p0: SeekBar?) {
-                    isTracking = true
-                    currentPageBar.thumb = resources.getDrawable(R.drawable.custom_thumb_big)
-                }
-
-                override fun onStopTrackingTouch(p0: SeekBar?) {
-                    isTracking = false
-                    currentPageBar.thumb = resources.getDrawable(R.drawable.custom_thumb_small)
-                }
-            })
-
-            if (bookData!!.name != "Не удалось загрузить данные с сервера(") {
-                bookUrl?.loadBookFromUrl(
-                    sharedPref!!,
+    private fun requestStoragePermissionLauncher(
+        bookUrl: String,
+        sharedPref: SharedPreferences,
+        chaptersPage: ArrayList<Int>?,
+        chaptersName: ArrayList<String>?,
+        isTracking: Boolean,
+        code: Int
+    ) = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted && code == 1) {
+                bookUrl.loadBookFromUrl(
+                    sharedPref,
                     position!!,
                     chaptersPage,
                     chaptersName,
                     isTracking
                 )
+            } else if (isGranted && code == 2) {
+                loadBookFromDownloadsFolder(sharedPref, position, chaptersPage, chaptersName, isTracking)
             }
         }
-    }
 
-    @SuppressLint("SetTextI18n")
     private fun String.loadBookFromUrl(
         sharedPref: SharedPreferences,
         position: Int,
@@ -203,67 +271,142 @@ class PdfViewActivity : AppCompatActivity() {
             .addOnSuccessListener { bytes ->
                 Log.d(TAG, "loadBookFromUrl: Pdf got from url successfully")
 
-                binding!!.pdfView.fromBytes(bytes)
-                    .defaultPage(sharedPref.getInt("lastPage of ${position + 1}", 0))
-                    .swipeHorizontal(true)
-                    .pageFling(true)
-                    .onPageChange {page, pageCount ->
-
-                        val currentPage = page + 1
-                        binding!!.tvPages.text = "$currentPage/$pageCount"
-                        Log.d(TAG, "loadBookFromUrl: $currentPage/$pageCount")
-
-                        with (sharedPref.edit()) {
-                            if (currentPage >= sharedPref.getInt("lastMaxPage of ${position + 1}", 0)) {
-                                putInt("lastMaxPage of ${position + 1}", currentPage)
-                                putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100F)
-                                apply()
-                            }
-                            putInt("lastPage of ${position + 1}", currentPage - 1)
-                            putFloat("seekBar ${position + 1}", binding!!.pdfView.positionOffset * 100F)
-                            apply()
-                        }
-
-                        if (!isTracking) {
-                            binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0F).toInt()
-                        }
-
-                        for (i in 0..chaptersPage!!.size) {
-                            if (i + 1 < chaptersPage.size) {
-                                if (currentPage >= chaptersPage[i] && currentPage < chaptersPage[i + 1]) {
-                                    binding!!.tvChapterName.text = chaptersName!![i]
-                                    currentChapter = i
-                                }
-
-                                if (currentPage < chaptersPage[0]) {
-                                    binding!!.tvChapterName.text = ""
-                                    currentChapter = -1
-                                }
-                            } else if (currentPage >= chaptersPage[chaptersPage.size - 1]) {
-                                binding!!.tvChapterName.text = chaptersName!![chaptersName.size - 1]
-                                currentChapter = chaptersName.size - 1
-                            }
-                        }
-                    }
-                    .onError { t ->
-                        Log.d(TAG, "loadBookFromUrl: ${t.message}")
-                    }
-                    .onPageError { page, t ->
-                        Log.d(TAG, "loadBookFromUrl: ${t.message} on page: $page")
-                    }
-                    .onLoad {
-                        binding?.apply {
-                            icChapters.visibility = View.VISIBLE
-                            currentPageBar.visibility = View.VISIBLE
-                            pdfBar.visibility = View.GONE
-                        }
-                    }
-                    .load()
+                initializePdfViewer(bytes, sharedPref, position, chaptersPage, chaptersName, isTracking)
+                saveToDownloadsFolder(bytes, this, sharedPref, position)
             }
             .addOnFailureListener { e ->
                 Log.d(TAG, "loadBookFromUrl: Failed to get pdf due to ${e.message}")
                 binding!!.pdfBar.visibility = View.GONE
             }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun initializePdfViewer(
+        bytes: ByteArray,
+        sharedPref: SharedPreferences,
+        position: Int,
+        chaptersPage: ArrayList<Int>?,
+        chaptersName: ArrayList<String>?,
+        isTracking: Boolean
+    ) {
+        binding!!.pdfView.fromBytes(bytes)
+            .defaultPage(sharedPref.getInt("lastPage of ${position + 1}", 0))
+            .swipeHorizontal(true)
+            .pageFling(true)
+            .onPageChange {page, pageCount ->
+
+                val currentPage = page + 1
+                binding!!.tvPages.text = "$currentPage/$pageCount"
+                Log.d(TAG, "loadBookFromUrl: $currentPage/$pageCount")
+
+                with (sharedPref.edit()) {
+                    if (currentPage >= sharedPref.getInt("lastMaxPage of ${position + 1}", 0)) {
+                        putInt("lastMaxPage of ${position + 1}", currentPage)
+                        putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100F)
+                        apply()
+                    }
+                    putInt("lastPage of ${position + 1}", currentPage - 1)
+                    putFloat("seekBar ${position + 1}", binding!!.pdfView.positionOffset * 100F)
+                    apply()
+                }
+
+                if (!isTracking) {
+                    binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0F).toInt()
+                }
+
+                for (i in 0..chaptersPage!!.size) {
+                    if (i + 1 < chaptersPage.size) {
+                        if (currentPage >= chaptersPage[i] && currentPage < chaptersPage[i + 1]) {
+                            binding!!.tvChapterName.text = chaptersName!![i]
+                            currentChapter = i
+                        }
+
+                        if (currentPage < chaptersPage[0]) {
+                            binding!!.tvChapterName.text = ""
+                            currentChapter = -1
+                        }
+                    } else if (currentPage >= chaptersPage[chaptersPage.size - 1]) {
+                        binding!!.tvChapterName.text = chaptersName!![chaptersName.size - 1]
+                        currentChapter = chaptersName.size - 1
+                    }
+                }
+            }
+            .onError { t ->
+                Log.d(TAG, "loadBookFromUrl: ${t.message}")
+            }
+            .onPageError { page, t ->
+                Log.d(TAG, "loadBookFromUrl: ${t.message} on page: $page")
+            }
+            .onLoad {
+                binding?.apply {
+                    icChapters.visibility = View.VISIBLE
+                    currentPageBar.visibility = View.VISIBLE
+                    pdfBar.visibility = View.GONE
+                }
+            }
+            .load()
+    }
+
+    private fun saveToDownloadsFolder(
+        bytes: ByteArray,
+        bookUrl: String,
+        sharedPref: SharedPreferences,
+        position: Int
+    ) {
+        val nameWithExtension = "${bookData?.name}.pdf"
+
+        try {
+            val downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            downloadsFolder.mkdirs()
+
+            val filePath = downloadsFolder.path + "/" + nameWithExtension
+
+            val out = FileOutputStream(filePath)
+            val inp = FileInputStream(filePath)
+            inp.read()
+            out.write(bytes)
+            out.close()
+
+            with(sharedPref.edit()) {
+                putString("bookUrl$position", bookUrl)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.d(TAG, "Error while saving book" + e.message!!)
+        }
+    }
+
+    private fun loadBookFromDownloadsFolder(
+        sharedPref: SharedPreferences,
+        position: Int?,
+        chaptersPage: ArrayList<Int>?,
+        chaptersName: ArrayList<String>?,
+        isTracking: Boolean
+    ) {
+        val nameWithExtension = "${bookData?.name}.pdf"
+        var bytes: ByteArray? = null
+
+        try {
+            val downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            downloadsFolder.mkdirs()
+
+            val filePath = downloadsFolder.path + "/" + nameWithExtension
+
+            val inp = FileInputStream(filePath)
+
+            val buf = ByteArray(1024)
+            while (inp.read(buf) > 0) {
+                bytes = buf
+            }
+
+            initializePdfViewer(bytes!!, sharedPref, position!!, chaptersPage, chaptersName, isTracking)
+
+            inp.close()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.d(TAG, "Error while saving book" + e.message!!)
+        }
     }
 
     @Suppress("DEPRECATION")

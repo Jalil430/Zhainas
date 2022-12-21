@@ -9,7 +9,6 @@ data class BookData(
     val writer: String,
     val bookUrl: String,
     val imageUrl: String,
-    val chaptersPage: ArrayList<Int>,
-    val chaptersName: ArrayList<String>,
-    val progress: Float
+    val chaptersPage: ArrayList<Int>?,
+    val chaptersName: ArrayList<String>?
     ) : Parcelable

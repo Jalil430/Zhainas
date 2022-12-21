@@ -26,7 +26,7 @@ class ChaptersRecyclerViewAdapter(
     }
 
     override fun getItemCount(): Int {
-        return bookData.chaptersName.size
+        return bookData.chaptersName!!.size
     }
 }
 
@@ -45,7 +45,7 @@ class ChaptersItem(
                 tvChapter.setTextColor(context.resources.getColor(R.color.foreground))
             }
 
-            tvChapter.text = chaptersName[adapterPosition]
+            tvChapter.text = chaptersName!![adapterPosition]
 
             chaptersCard.setOnClickListener {
                 callback.invoke(adapterPosition)

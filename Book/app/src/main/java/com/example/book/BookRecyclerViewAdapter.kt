@@ -20,7 +20,8 @@ import com.example.book.databinding.RecentBookItemBinding
 
 class BookRecyclerViewAdapter(
     private val bookData: List<BookData>,
-    private val preferences: SharedPreferences
+    private val preferences: SharedPreferences,
+    private val progress: ArrayList<Float>
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var bookItemBinding: BookItemBinding? = null
@@ -33,10 +34,10 @@ class BookRecyclerViewAdapter(
         Log.d("vnir", "create")
         return when (viewType) {
             0 -> {
-                RecentBook(bookRecentBinding!!, parent.context, preferences)
+                RecentBook(bookRecentBinding!!, parent.context, preferences, progress)
             }
             else -> {
-                Book(bookItemBinding!!, parent.context, preferences)
+                Book(bookItemBinding!!, parent.context, preferences, progress)
             }
         }
     }
@@ -73,9 +74,9 @@ class BookRecyclerViewAdapter(
 
     override fun getItemCount(): Int {
         return if (recent >= 0 && recent <= bookData.size) {
-            bookData.size + 1
-        } else {
             bookData.size
+        } else {
+            bookData.size - 1
         }
     }
 }
@@ -83,7 +84,8 @@ class BookRecyclerViewAdapter(
 class RecentBook(
     private val binding: RecentBookItemBinding,
     private val context: Context,
-    preferences: SharedPreferences
+    preferences: SharedPreferences,
+    private val progress: ArrayList<Float>
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private val recent = preferences.getInt("recent", -1)
@@ -129,8 +131,8 @@ class RecentBook(
 
             tvBookNameR.text = book.name
             tvWriterR.text = book.writer
-            "${book.progress.toInt()}%".also { tvProgressR.text = it }
-            progressBookR.progress = book.progress.toInt()
+            "${progress[recent].toInt()}%".also { tvProgressR.text = it }
+            progressBookR.progress = progress[recent].toInt()
         }
     }
 }
@@ -138,7 +140,8 @@ class RecentBook(
 class Book(
     private val binding: BookItemBinding,
     private val context: Context,
-    private val preferences: SharedPreferences
+    private val preferences: SharedPreferences,
+    private val progress: ArrayList<Float>
 ) : RecyclerView.ViewHolder(binding.root) {
 
     @SuppressLint("UseCompatLoadingForDrawables")
@@ -185,8 +188,8 @@ class Book(
             tvBookName.text = book.name
             tvWriter.text = book.writer
 
-            "Прочитать: ${book.progress.toInt()}%".also { tvProgress.text = it }
-            progressBook.progress = book.progress.toInt()
+            "Прочитать: ${progress[adapterPosition - 1].toInt()}%".also { tvProgress.text = it }
+            progressBook.progress = progress[adapterPosition - 1].toInt()
         }
     }
 
@@ -233,8 +236,8 @@ class Book(
 
             tvBookName.text = book.name
             tvWriter.text = book.writer
-            "Прочитать: ${book.progress.toInt()}%".also { tvProgress.text = it }
-            progressBook.progress = book.progress.toInt()
+            "Прочитать: ${progress[adapterPosition].toInt()}%".also { tvProgress.text = it }
+            progressBook.progress = progress[adapterPosition].toInt()
         }
     }
 }

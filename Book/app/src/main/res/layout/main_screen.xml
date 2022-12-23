@@ -37,9 +37,9 @@
         android:id="@+id/booksLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
         android:layout_above="@id/bottomRelativeLayout"
-        android:layout_below="@id/topRelativeLayout">
+        android:layout_below="@id/topRelativeLayout"
+        android:visibility="gone">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/booksRecyclerView"
@@ -50,29 +50,35 @@
     </RelativeLayout>
 
     <RelativeLayout
-        android:id="@+id/lovedLayout"
+        android:id="@+id/rootLovedView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
         android:layout_above="@id/bottomRelativeLayout"
         android:layout_below="@id/topRelativeLayout">
 
-        <TextView
-            android:id="@+id/tvFavorite"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="@dimen/_20sdp"
-            android:textStyle="bold"
-            android:textColor="@color/black_white"
-            android:layout_margin="@dimen/_10sdp"
-            android:text="Избранные" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/lovedRecyclerView"
+        <RelativeLayout
+            android:id="@+id/lovedLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/tvFavorite"
-            android:layout_alignParentBottom="true"/>
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvFavorite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/_10sdp"
+                android:text="Избранные"
+                android:textColor="@color/black_white"
+                android:textSize="@dimen/_20sdp"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/lovedRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvFavorite"
+                android:layout_alignParentBottom="true" />
+        </RelativeLayout>
     </RelativeLayout>
 
     <RelativeLayout

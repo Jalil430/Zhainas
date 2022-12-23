@@ -3,6 +3,7 @@ package com.example.book
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
+import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +14,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.example.book.databinding.BookItemBinding
+import java.io.File
 
 class LovedRecyclerViewAdapter(
     private val bookData: List<BookData>,
@@ -86,9 +88,29 @@ class LovedBooksList(
 
                 tvBookName.text = book.name
                 tvWriter.text = book.writer
-                "Прочитать: $progress%".also { tvProgress.text = it }
-                progressBook.progress = progress
+
+//                if (isBookDownloaded("${book.name}.pdf")) {
+//                    downloadDone.visibility = View.VISIBLE
+//                } else {
+//                    downloadDone.visibility = View.GONE
+//                }
+
+                if (progress > 0) {
+                    tvProgress.visibility = View.VISIBLE
+                    progressBook.visibility = View.VISIBLE
+                    "Прочитать: $progress%".also { tvProgress.text = it }
+                    progressBook.progress = progress
+                }
             }
         }
+    }
+
+    private fun isBookDownloaded(name: String): Boolean {
+        val downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        downloadsFolder.mkdirs()
+
+        val filePath = downloadsFolder.path + "/" + name
+        val file = File(filePath)
+        return file.exists()
     }
 }

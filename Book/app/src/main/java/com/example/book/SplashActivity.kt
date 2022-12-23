@@ -1,5 +1,6 @@
 package com.example.book
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -23,6 +24,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
@@ -67,10 +69,11 @@ class SplashActivity : AppCompatActivity() {
         } else {
             Handler().postDelayed({
                 var childrenCount = 0
-                CoroutineScope(Dispatchers.IO).launch {
-                    childrenCount = booksDao!!.get().childrenCount
 
-                    if (childrenCount > 1) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    if (booksDao?.isExists() == true) {
+                        childrenCount = booksDao!!.get().childrenCount
+
                         CoroutineScope(Dispatchers.Main).launch {
                             Toast.makeText(
                                 this@SplashActivity,
@@ -80,9 +83,20 @@ class SplashActivity : AppCompatActivity() {
 
                             startAnimationWithIntent(childrenCount)
                         }
+                    } else {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            Toast.makeText(
+                                this@SplashActivity,
+                                "Нет подключения к интернету. Приложение нуждается в интернет подключении хотя бы при первом запуске",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            Handler().postDelayed({
+                                finishAndRemoveTask()
+                            }, 1500)
+                        }
                     }
                 }
-            }, 2000)
+            }, 5000)
         }
     }
 
@@ -161,20 +175,22 @@ class SplashActivity : AppCompatActivity() {
             val intent = Intent(this@SplashActivity, MainScreenActivity::class.java)
             intent.putExtra("childrenCount", ChildrenCount)
             startActivity(intent)
-        }, 400)
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }, 350)
 
-        hehamTvSplash.startAnimation(scaleDownAnim)
-        scaleDownAnim.setAnimationListener(object: AnimationListener {
-            override fun onAnimationStart(p0: Animation?) {
-            }
+        CoroutineScope(Dispatchers.Default).launch {
+            hehamTvSplash.startAnimation(scaleDownAnim)
+            scaleDownAnim.setAnimationListener(object: AnimationListener {
+                override fun onAnimationStart(p0: Animation?) {
+                }
 
-            override fun onAnimationEnd(p0: Animation?) {
-                hehamTvSplash.visibility = View.GONE
-                finish()
-            }
+                override fun onAnimationEnd(p0: Animation?) {
+                    hehamTvSplash.visibility = View.GONE
+                }
 
-            override fun onAnimationRepeat(p0: Animation?) {
-            }
-        })
+                override fun onAnimationRepeat(p0: Animation?) {
+                }
+            })
+        }
     }
 }

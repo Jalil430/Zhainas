@@ -8,7 +8,6 @@ import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.os.Environment
-import android.os.Handler
 import android.util.Log
 import android.view.View
 import android.widget.SeekBar
@@ -18,7 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.example.book.databinding.PdfViewBinding
 import com.google.firebase.storage.FirebaseStorage
-import java.io.FileInputStream
+import java.io.File
 import java.io.FileOutputStream
 
 @Suppress("NAME_SHADOWING", "DEPRECATION")
@@ -31,7 +30,6 @@ class PdfViewActivity : AppCompatActivity() {
     private var isCheckedLoved = false
 
     private var isConnectedToInternet: Boolean? = null
-    private var connectionLiveData: ConnectionLiveData? = null
 
     private companion object {
         const val TAG = "PDF_VIEW_TAG"
@@ -70,7 +68,6 @@ class PdfViewActivity : AppCompatActivity() {
             }
         }
 
-//        checkNetworkConnection()
         isConnectedToInternet = isNetworkConnected()
 
         val bookUrl = bookData?.bookUrl
@@ -104,54 +101,57 @@ class PdfViewActivity : AppCompatActivity() {
             })
 
             if (bookData!!.name != "Не удалось загрузить данные с сервера(") {
-                val savedBookUrl = sharedPref.getString("bookUrl$position", "")
-                if (!isConnectedToInternet!!) {
-                    if (bookUrl == savedBookUrl) {
-                        if (ContextCompat.checkSelfPermission(
-                                this@PdfViewActivity,
-                                android.Manifest.permission.READ_EXTERNAL_STORAGE
-                            ) == PackageManager.PERMISSION_GRANTED) {
+                if (isBookDownloaded("$bookName.pdf") && !isConnectedToInternet!!) {
+                    if (ContextCompat.checkSelfPermission(
+                            this@PdfViewActivity,
+                            android.Manifest.permission.READ_EXTERNAL_STORAGE
+                        ) == PackageManager.PERMISSION_GRANTED) {
 
-                            loadBookFromDownloadsFolder(
-                                sharedPref,
-                                position,
-                                chaptersPage,
-                                chaptersName,
-                                isTracking
-                            )
-
-                        } else {
-                            requestStoragePermissionLauncher(
-                                bookUrl!!, sharedPref, chaptersPage, chaptersName, isTracking, 2
-                            ).launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-                        }
+                        loadBookFromDownloadsFolder(
+                            sharedPref,
+                            position,
+                            chaptersPage,
+                            chaptersName,
+                            isTracking
+                        )
 
                     } else {
-                        if (ContextCompat.checkSelfPermission(
-                                this@PdfViewActivity,
-                                android.Manifest.permission.WRITE_EXTERNAL_STORAGE
-                            ) == PackageManager.PERMISSION_GRANTED) {
+                        requestStoragePermissionLauncher(
+                            bookUrl!!, sharedPref, chaptersPage, chaptersName, isTracking, 2
+                        ).launch(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                    }
 
-                            bookUrl?.loadBookFromUrl(
-                                sharedPref!!,
-                                position!!,
-                                chaptersPage,
-                                chaptersName,
-                                isTracking
-                            )
-//                        Handler().postDelayed({
-//
-//                        }, 15000)
+                } else {
+                    if (ContextCompat.checkSelfPermission(
+                            this@PdfViewActivity,
+                            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        ) == PackageManager.PERMISSION_GRANTED) {
 
-                        } else {
-                            requestStoragePermissionLauncher(
-                                bookUrl!!, sharedPref, chaptersPage, chaptersName, isTracking, 1
-                            ).launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        }
+                        bookUrl?.loadBookFromUrl(
+                            sharedPref!!,
+                            position!!,
+                            chaptersPage,
+                            chaptersName,
+                            isTracking
+                        )
+
+                    } else {
+                        requestStoragePermissionLauncher(
+                            bookUrl!!, sharedPref, chaptersPage, chaptersName, isTracking, 1
+                        ).launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                     }
                 }
             }
         }
+    }
+
+    private fun isBookDownloaded(name: String): Boolean {
+        val downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        downloadsFolder.mkdirs()
+
+        val filePath = downloadsFolder.path + "/" + name
+        val file = File(filePath)
+        return file.exists()
     }
 
     private fun icLovedClickListener(whereCalled: String) {
@@ -180,9 +180,11 @@ class PdfViewActivity : AppCompatActivity() {
 
                 val lovedBooks = sharedPref.getString("lovedBooks", "")
 
-                with(sharedPref.edit()) {
-                    putString("lovedBooks", lovedBooks.plus("$position"))
-                    apply()
+                if (lovedBooks?.contains(position!!.toChar()) == false) {
+                    with(sharedPref.edit()) {
+                        putString("lovedBooks", lovedBooks.plus("$position"))
+                        apply()
+                    }
                 }
             }
         } else {
@@ -217,24 +219,6 @@ class PdfViewActivity : AppCompatActivity() {
     private fun isNetworkConnected(): Boolean {
         val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         return cm.activeNetworkInfo != null && cm.activeNetworkInfo!!.isConnected
-    }
-
-    private fun checkNetworkConnection() {
-        connectionLiveData = ConnectionLiveData(application)
-
-        connectionLiveData?.observe(this) { isConnected ->
-            val intent = Intent(this, ConnectionLost::class.java)
-
-            if (!isConnected) {
-                isConnectedToInternet = false
-                intent.putExtra("isConnected", false)
-                startActivity(intent)
-                finish()
-            } else {
-                isConnectedToInternet = true
-                onResume()
-            }
-        }
     }
 
     private fun requestStoragePermissionLauncher(
@@ -272,7 +256,7 @@ class PdfViewActivity : AppCompatActivity() {
                 Log.d(TAG, "loadBookFromUrl: Pdf got from url successfully")
 
                 initializePdfViewer(bytes, sharedPref, position, chaptersPage, chaptersName, isTracking)
-                saveToDownloadsFolder(bytes, this, sharedPref, position)
+                saveToDownloadsFolder(bytes)
             }
             .addOnFailureListener { e ->
                 Log.d(TAG, "loadBookFromUrl: Failed to get pdf due to ${e.message}")
@@ -302,16 +286,20 @@ class PdfViewActivity : AppCompatActivity() {
                 with (sharedPref.edit()) {
                     if (currentPage >= sharedPref.getInt("lastMaxPage of ${position + 1}", 0)) {
                         putInt("lastMaxPage of ${position + 1}", currentPage)
-                        putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100F)
+                        if (binding!!.pdfView.positionOffset * 100f <= 0f) {
+                            putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100f + 1f)
+                        } else {
+                            putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100f)
+                        }
                         apply()
                     }
                     putInt("lastPage of ${position + 1}", currentPage - 1)
-                    putFloat("seekBar ${position + 1}", binding!!.pdfView.positionOffset * 100F)
+                    putFloat("seekBar ${position + 1}", binding!!.pdfView.positionOffset * 100f)
                     apply()
                 }
 
                 if (!isTracking) {
-                    binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0F).toInt()
+                    binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0f).toInt()
                 }
 
                 for (i in 0..chaptersPage!!.size) {
@@ -338,6 +326,14 @@ class PdfViewActivity : AppCompatActivity() {
                 Log.d(TAG, "loadBookFromUrl: ${t.message} on page: $page")
             }
             .onLoad {
+                val hasRead = sharedPref.getBoolean("hasRead ${position + 1}", false)
+                if (!hasRead) {
+                    with(sharedPref.edit()) {
+                        putBoolean("hasRead ${position + 1}", true)
+                        apply()
+                    }
+                }
+
                 binding?.apply {
                     icChapters.visibility = View.VISIBLE
                     currentPageBar.visibility = View.VISIBLE
@@ -348,10 +344,7 @@ class PdfViewActivity : AppCompatActivity() {
     }
 
     private fun saveToDownloadsFolder(
-        bytes: ByteArray,
-        bookUrl: String,
-        sharedPref: SharedPreferences,
-        position: Int
+        bytes: ByteArray
     ) {
         val nameWithExtension = "${bookData?.name}.pdf"
 
@@ -362,14 +355,8 @@ class PdfViewActivity : AppCompatActivity() {
             val filePath = downloadsFolder.path + "/" + nameWithExtension
 
             val out = FileOutputStream(filePath)
-            val inp = FileInputStream(filePath)
-            inp.read()
             out.write(bytes)
             out.close()
-
-            with(sharedPref.edit()) {
-                putString("bookUrl$position", bookUrl)
-            }
         } catch (e: Exception) {
             e.printStackTrace()
             Log.d(TAG, "Error while saving book" + e.message!!)
@@ -384,24 +371,16 @@ class PdfViewActivity : AppCompatActivity() {
         isTracking: Boolean
     ) {
         val nameWithExtension = "${bookData?.name}.pdf"
-        var bytes: ByteArray? = null
 
         try {
             val downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             downloadsFolder.mkdirs()
 
             val filePath = downloadsFolder.path + "/" + nameWithExtension
-
-            val inp = FileInputStream(filePath)
-
-            val buf = ByteArray(1024)
-            while (inp.read(buf) > 0) {
-                bytes = buf
-            }
+            val file = File(filePath)
+            val bytes = org.apache.commons.io.FileUtils.readFileToByteArray(file)
 
             initializePdfViewer(bytes!!, sharedPref, position!!, chaptersPage, chaptersName, isTracking)
-
-            inp.close()
 
         } catch (e: Exception) {
             e.printStackTrace()
@@ -431,8 +410,10 @@ class PdfViewActivity : AppCompatActivity() {
                     Log.d(TAG, "chapters page/ pageCount = null")
                 }
 
-                isCheckedLoved = data?.getBooleanExtra("isCheckedLoved", false) !!
-                icLovedClickListener("B")
+                if (isCheckedLoved != data?.getBooleanExtra("isCheckedLoved", false) !!) {
+                    isCheckedLoved = data.getBooleanExtra("isCheckedLoved", false)
+                    icLovedClickListener("B")
+                }
             }
         }
     }

@@ -15,4 +15,7 @@ interface BooksDao {
 
     @Query("SELECT * FROM books")
     fun get(): Books
+
+    @Query("SELECT EXISTS(SELECT * FROM books)")
+    fun isExists(): Boolean
 }

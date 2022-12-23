@@ -5,6 +5,11 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
+import android.transition.Slide
+import android.transition.Transition
+import android.transition.Transition.TransitionListener
+import android.transition.TransitionManager
+import android.view.Gravity
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,13 +21,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+
 class MainScreenActivity : AppCompatActivity() {
 
     private var binding: MainScreenBinding? = null
     private var whichPage = 0
-
-    private var isConnectedToInternet: Boolean? = null
-    private var connectionLiveData: ConnectionLiveData? = null
 
     private var bookData: List<BookData>? = null
     private var localDatabase: BooksRoomDatabase? = null
@@ -39,7 +42,6 @@ class MainScreenActivity : AppCompatActivity() {
         whichPage = 1
         childrenCount = intent.getIntExtra("childrenCount", 0)
         initializeDatabaseAndBookData()
-        checkNetworkConnection()
 
         binding?.apply {
             homePage.setOnClickListener {
@@ -88,13 +90,11 @@ class MainScreenActivity : AppCompatActivity() {
             )
         }
 
-        Handler().postDelayed({
-            if (bookData != null) {
-                initializeView(bookData!!, preferences, lovedBooks, progress)
-            } else {
-                onResume()
-            }
-        }, 1200)
+        if (bookData != null) {
+            initializeView(bookData!!, preferences, lovedBooks, progress)
+        } else {
+            onResume()
+        }
     }
 
     private fun initializeView(
@@ -103,70 +103,66 @@ class MainScreenActivity : AppCompatActivity() {
         lovedBooks: String?,
         progress: ArrayList<Float>
     ) {
-        binding!!.progressBar.visibility = View.GONE
+        binding?.apply {
+            progressBar.visibility = View.GONE
 
-        binding!!.bookPage.setOnClickListener {
-            val recent = preferences.getInt("recent", -1)
-            val intent = Intent(this@MainScreenActivity, PdfViewActivity::class.java)
+            val transitionStart: Transition = Slide(Gravity.START)
+            transitionStart.duration = 500
+            transitionStart.addTarget(binding!!.booksLayout)
 
-            if (recent >= 0 && recent <= bookData.size) {
-                intent.putExtra("bookData", bookData[recent])
-                intent.putExtra("position", recent)
-                intent.putExtra("progress", progress[recent])
-                startActivity(intent)
-            } else {
-                intent.putExtra("bookData", bookData[0])
-                intent.putExtra("position", 0)
-                intent.putExtra("progress", progress[0])
-                startActivity(intent)
+            val transitionEnd: Transition = Slide(Gravity.END)
+            transitionEnd.duration = 300
+            transitionEnd.addTarget(binding!!.lovedLayout)
+
+            bookPage.setOnClickListener {
+                val recent = preferences.getInt("recent", -1)
+                val intent = Intent(this@MainScreenActivity, PdfViewActivity::class.java)
+
+                if (recent >= 0 && recent <= bookData.size) {
+                    intent.putExtra("bookData", bookData[recent])
+                    intent.putExtra("position", recent)
+                    intent.putExtra("progress", progress[recent])
+                    startActivity(intent)
+                } else {
+                    intent.putExtra("bookData", bookData[0])
+                    intent.putExtra("position", 0)
+                    intent.putExtra("progress", progress[0])
+                    startActivity(intent)
+                }
             }
-        }
 
-        if (whichPage == 1) {
-            binding!!.booksLayout.visibility = View.VISIBLE
-            binding!!.lovedLayout.visibility = View.GONE
-            val layoutManager = LinearLayoutManager(
-                this@MainScreenActivity,
-                LinearLayoutManager.VERTICAL,
-                false
-            )
+            if (whichPage == 1) {
+                TransitionManager.beginDelayedTransition(rootLovedView, transitionEnd)
+                lovedLayout.visibility = View.GONE
+                TransitionManager.beginDelayedTransition(rootMainScreen, transitionStart)
+                booksLayout.visibility = View.VISIBLE
 
-            binding?.apply {
+                val layoutManager = LinearLayoutManager(
+                    this@MainScreenActivity,
+                    LinearLayoutManager.VERTICAL,
+                    false
+                )
+
                 booksRecyclerView.layoutManager = layoutManager
                 val adapter = BookRecyclerViewAdapter(bookData, preferences, progress)
                 booksRecyclerView.adapter = adapter
-            }
-        } else {
-            binding!!.booksLayout.visibility = View.GONE
-            binding!!.lovedLayout.visibility = View.VISIBLE
-            val layoutManager = LinearLayoutManager(
-                this@MainScreenActivity,
-                LinearLayoutManager.VERTICAL,
-                false
-            )
+            } else {
+                TransitionManager.beginDelayedTransition(rootMainScreen, transitionStart)
+                booksLayout.visibility = View.GONE
+                Handler().postDelayed({
+                    TransitionManager.beginDelayedTransition(rootLovedView, transitionEnd)
+                    lovedLayout.visibility = View.VISIBLE
+                }, 200)
 
-            binding?.apply {
+                val layoutManager = LinearLayoutManager(
+                    this@MainScreenActivity,
+                    LinearLayoutManager.VERTICAL,
+                    false
+                )
+
                 lovedRecyclerView.layoutManager = layoutManager
                 val adapter = LovedRecyclerViewAdapter(bookData, lovedBooks!!, progress)
                 lovedRecyclerView.adapter = adapter
-            }
-        }
-    }
-
-    private fun checkNetworkConnection() {
-        connectionLiveData = ConnectionLiveData(application)
-
-        connectionLiveData?.observe(this) { isConnected ->
-            val intent = Intent(this, ConnectionLost::class.java)
-
-            if (!isConnected) {
-                isConnectedToInternet = false
-                intent.putExtra("isConnected", false)
-                startActivity(intent)
-                finish()
-            } else {
-                isConnectedToInternet = true
-                onResume()
             }
         }
     }

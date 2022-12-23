@@ -2,9 +2,11 @@ package com.example.book
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.drawable.Drawable
+import android.os.Environment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -17,6 +19,7 @@ import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
 import com.example.book.databinding.BookItemBinding
 import com.example.book.databinding.RecentBookItemBinding
+import java.io.File
 
 class BookRecyclerViewAdapter(
     private val bookData: List<BookData>,
@@ -31,7 +34,6 @@ class BookRecyclerViewAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         bookItemBinding = BookItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         bookRecentBinding = RecentBookItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        Log.d("vnir", "create")
         return when (viewType) {
             0 -> {
                 RecentBook(bookRecentBinding!!, parent.context, preferences, progress)
@@ -43,7 +45,6 @@ class BookRecyclerViewAdapter(
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        Log.d("vnir", "bind")
         return when (holder.itemViewType) {
             0 -> {
                 val recentBook: RecentBook = holder as RecentBook
@@ -60,8 +61,6 @@ class BookRecyclerViewAdapter(
         }
     }
 
-
-
     override fun getItemViewType(position: Int): Int {
         return if (recent >= 0 && recent <= bookData.size && position == 0) {
             0
@@ -74,9 +73,9 @@ class BookRecyclerViewAdapter(
 
     override fun getItemCount(): Int {
         return if (recent >= 0 && recent <= bookData.size) {
-            bookData.size
+            bookData.size + 1
         } else {
-            bookData.size - 1
+            bookData.size
         }
     }
 }
@@ -103,7 +102,6 @@ class RecentBook(
                         target: Target<Drawable>?,
                         isFirstResource: Boolean
                     ): Boolean {
-                        Log.d("ji", "fail")
                         return false
                     }
 
@@ -131,8 +129,20 @@ class RecentBook(
 
             tvBookNameR.text = book.name
             tvWriterR.text = book.writer
-            "${progress[recent].toInt()}%".also { tvProgressR.text = it }
-            progressBookR.progress = progress[recent].toInt()
+
+            if (progress[recent] > 0f) {
+                tvProgressR.visibility = View.VISIBLE
+                progressBookR.visibility = View.VISIBLE
+                "${progress[recent].toInt()}%".also { tvProgressR.text = it }
+                progressBookR.progress = progress[recent].toInt()
+            }
+            if (progress[recent] == 100f) {
+                tvProgressR.visibility = View.VISIBLE
+                progressBookR.visibility = View.VISIBLE
+                "${progress[recent].toInt()}%".also { tvProgressR.text = it }
+                progressBookR.progress = progress[recent].toInt()
+                tvContinue.text = "Прочитано"
+            }
         }
     }
 }
@@ -188,8 +198,30 @@ class Book(
             tvBookName.text = book.name
             tvWriter.text = book.writer
 
-            "Прочитать: ${progress[adapterPosition - 1].toInt()}%".also { tvProgress.text = it }
-            progressBook.progress = progress[adapterPosition - 1].toInt()
+//            if (isBookDownloaded("${book.name}.pdf")) {
+//                downloadDone.visibility = View.VISIBLE
+//            } else {
+//                downloadDone.visibility = View.GONE
+//            }
+
+            val sharedPref = context.getSharedPreferences("Book", MODE_PRIVATE)
+            val hasRead = sharedPref.getBoolean("hasRead $adapterPosition", false)
+
+            if (progress[adapterPosition - 1] > 0f && hasRead) {
+                tvProgress.visibility = View.VISIBLE
+                progressBook.visibility = View.VISIBLE
+                "Прочитать: ${progress[adapterPosition - 1].toInt()}%".also { tvProgress.text = it }
+                progressBook.progress = progress[adapterPosition - 1].toInt()
+            } else {
+                tvProgress.visibility = View.GONE
+                progressBook.visibility = View.GONE
+            }
+            if (progress[adapterPosition - 1] == 100f) {
+                tvProgress.visibility = View.VISIBLE
+                progressBook.visibility = View.VISIBLE
+                "Прочитано: ${progress[adapterPosition - 1].toInt()}%".also { tvProgress.text = it }
+                progressBook.progress = progress[adapterPosition - 1].toInt()
+            }
         }
     }
 
@@ -236,8 +268,22 @@ class Book(
 
             tvBookName.text = book.name
             tvWriter.text = book.writer
-            "Прочитать: ${progress[adapterPosition].toInt()}%".also { tvProgress.text = it }
-            progressBook.progress = progress[adapterPosition].toInt()
+
+//            if (isBookDownloaded("${book.name}.pdf")) {
+//                downloadDone.visibility = View.VISIBLEik
+
+//            } else {
+//                downloadDone.visibility = View.GONE
+//            }
         }
+    }
+
+    private fun isBookDownloaded(name: String): Boolean {
+        val downloadsFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        downloadsFolder.mkdirs()
+
+        val filePath = downloadsFolder.path + "/" + name
+        val file = File(filePath)
+        return file.exists()
     }
 }

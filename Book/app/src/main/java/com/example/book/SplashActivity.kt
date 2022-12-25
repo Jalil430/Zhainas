@@ -49,9 +49,8 @@ class SplashActivity : AppCompatActivity() {
                 if (bookData == null) {
                     var childrenCount = 0
                     CoroutineScope(Dispatchers.IO).launch {
-                        childrenCount = booksDao!!.get().childrenCount
-
-                        if (childrenCount > 1) {
+                        if (booksDao?.isExists() == true) {
+                            childrenCount = booksDao?.get()!!.childrenCount
                             CoroutineScope(Dispatchers.Main).launch {
                                 Toast.makeText(
                                     this@SplashActivity,
@@ -61,6 +60,18 @@ class SplashActivity : AppCompatActivity() {
                                 ).show()
 
                                 startAnimationWithIntent(childrenCount)
+                            }
+                        } else {
+                            CoroutineScope(Dispatchers.Main).launch {
+                                Toast.makeText(
+                                    this@SplashActivity,
+                                    "Не удалось загузить данные с сервера, возможно слишком плохое интернет подключение." +
+                                            "Приложение нуждается в интернет подключении хотя бы при первом запуске",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                Handler().postDelayed({
+                                    finishAndRemoveTask()
+                                }, 1500)
                             }
                         }
                     }

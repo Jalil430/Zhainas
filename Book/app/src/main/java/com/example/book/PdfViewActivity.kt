@@ -273,74 +273,76 @@ class PdfViewActivity : AppCompatActivity() {
         chaptersName: ArrayList<String>?,
         isTracking: Boolean
     ) {
-        binding!!.pdfView.fromBytes(bytes)
-            .defaultPage(sharedPref.getInt("lastPage of ${position + 1}", 0))
-            .swipeHorizontal(true)
-            .pageFling(true)
-            .onPageChange {page, pageCount ->
+        if (!isDestroyed) {
+            binding!!.pdfView.fromBytes(bytes)
+                .defaultPage(sharedPref.getInt("lastPage of ${position + 1}", 0))
+                .swipeHorizontal(true)
+                .pageFling(true)
+                .onPageChange {page, pageCount ->
 
-                val currentPage = page + 1
-                binding!!.tvPages.text = "$currentPage/$pageCount"
-                Log.d(TAG, "loadBookFromUrl: $currentPage/$pageCount")
+                    val currentPage = page + 1
+                    binding!!.tvPages.text = "$currentPage/$pageCount"
+                    Log.d(TAG, "loadBookFromUrl: $currentPage/$pageCount")
 
-                with (sharedPref.edit()) {
-                    if (currentPage >= sharedPref.getInt("lastMaxPage of ${position + 1}", 0)) {
-                        putInt("lastMaxPage of ${position + 1}", currentPage)
-                        if (binding!!.pdfView.positionOffset * 100f <= 0f) {
-                            putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100f + 1f)
-                        } else {
-                            putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100f)
+                    with (sharedPref.edit()) {
+                        if (currentPage >= sharedPref.getInt("lastMaxPage of ${position + 1}", 0)) {
+                            putInt("lastMaxPage of ${position + 1}", currentPage)
+                            if (binding!!.pdfView.positionOffset * 100f <= 0f) {
+                                putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100f + 1f)
+                            } else {
+                                putFloat("${position + 1}", binding!!.pdfView.positionOffset * 100f)
+                            }
+                            apply()
                         }
+                        putInt("lastPage of ${position + 1}", currentPage - 1)
+                        putFloat("seekBar ${position + 1}", binding!!.pdfView.positionOffset * 100f)
                         apply()
                     }
-                    putInt("lastPage of ${position + 1}", currentPage - 1)
-                    putFloat("seekBar ${position + 1}", binding!!.pdfView.positionOffset * 100f)
-                    apply()
-                }
 
-                if (!isTracking) {
-                    binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0f).toInt()
-                }
+                    if (!isTracking) {
+                        binding!!.currentPageBar.progress = sharedPref.getFloat("seekBar ${position + 1}", 0f).toInt()
+                    }
 
-                for (i in 0..chaptersPage!!.size) {
-                    if (i + 1 < chaptersPage.size) {
-                        if (currentPage >= chaptersPage[i] && currentPage < chaptersPage[i + 1]) {
-                            binding!!.tvChapterName.text = chaptersName!![i]
-                            currentChapter = i
+                    for (i in 0..chaptersPage!!.size) {
+                        if (i + 1 < chaptersPage.size) {
+                            if (currentPage >= chaptersPage[i] && currentPage < chaptersPage[i + 1]) {
+                                binding!!.tvChapterName.text = chaptersName!![i]
+                                currentChapter = i
+                            }
+
+                            if (currentPage < chaptersPage[0]) {
+                                binding!!.tvChapterName.text = ""
+                                currentChapter = -1
+                            }
+                        } else if (currentPage >= chaptersPage[chaptersPage.size - 1]) {
+                            binding!!.tvChapterName.text = chaptersName!![chaptersName.size - 1]
+                            currentChapter = chaptersName.size - 1
                         }
-
-                        if (currentPage < chaptersPage[0]) {
-                            binding!!.tvChapterName.text = ""
-                            currentChapter = -1
-                        }
-                    } else if (currentPage >= chaptersPage[chaptersPage.size - 1]) {
-                        binding!!.tvChapterName.text = chaptersName!![chaptersName.size - 1]
-                        currentChapter = chaptersName.size - 1
                     }
                 }
-            }
-            .onError { t ->
-                Log.d(TAG, "loadBookFromUrl: ${t.message}")
-            }
-            .onPageError { page, t ->
-                Log.d(TAG, "loadBookFromUrl: ${t.message} on page: $page")
-            }
-            .onLoad {
-                val hasRead = sharedPref.getBoolean("hasRead ${position + 1}", false)
-                if (!hasRead) {
-                    with(sharedPref.edit()) {
-                        putBoolean("hasRead ${position + 1}", true)
-                        apply()
+                .onError { t ->
+                    Log.d(TAG, "loadBookFromUrl: ${t.message}")
+                }
+                .onPageError { page, t ->
+                    Log.d(TAG, "loadBookFromUrl: ${t.message} on page: $page")
+                }
+                .onLoad {
+                    val hasRead = sharedPref.getBoolean("hasRead ${position + 1}", false)
+                    if (!hasRead) {
+                        with(sharedPref.edit()) {
+                            putBoolean("hasRead ${position + 1}", true)
+                            apply()
+                        }
+                    }
+
+                    binding?.apply {
+                        icChapters.visibility = View.VISIBLE
+                        currentPageBar.visibility = View.VISIBLE
+                        pdfBar.visibility = View.GONE
                     }
                 }
-
-                binding?.apply {
-                    icChapters.visibility = View.VISIBLE
-                    currentPageBar.visibility = View.VISIBLE
-                    pdfBar.visibility = View.GONE
-                }
-            }
-            .load()
+                .load()
+        }
     }
 
     private fun saveToDownloadsFolder(

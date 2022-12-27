@@ -107,13 +107,12 @@ class MainScreenActivity : AppCompatActivity() {
             progressBar.visibility = View.GONE
 
             val transitionStart: Transition = Slide(Gravity.START)
-            transitionStart.duration = 500
+            transitionStart.duration = 400
             transitionStart.addTarget(binding!!.booksLayout)
 
             val transitionEnd: Transition = Slide(Gravity.END)
-            transitionEnd.duration = 300
+            transitionEnd.duration = 400
             transitionEnd.addTarget(binding!!.lovedLayout)
-
             bookPage.setOnClickListener {
                 val recent = preferences.getInt("recent", -1)
                 val intent = Intent(this@MainScreenActivity, PdfViewActivity::class.java)
@@ -149,10 +148,8 @@ class MainScreenActivity : AppCompatActivity() {
             } else {
                 TransitionManager.beginDelayedTransition(rootMainScreen, transitionStart)
                 booksLayout.visibility = View.GONE
-                Handler().postDelayed({
-                    TransitionManager.beginDelayedTransition(rootLovedView, transitionEnd)
-                    lovedLayout.visibility = View.VISIBLE
-                }, 200)
+                TransitionManager.beginDelayedTransition(rootLovedView, transitionEnd)
+                lovedLayout.visibility = View.VISIBLE
 
                 val layoutManager = LinearLayoutManager(
                     this@MainScreenActivity,

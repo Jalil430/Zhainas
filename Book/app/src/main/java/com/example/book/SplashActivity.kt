@@ -1,6 +1,5 @@
 package com.example.book
 
-import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
@@ -24,7 +23,6 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 @Suppress("DEPRECATION")
@@ -47,7 +45,7 @@ class SplashActivity : AppCompatActivity() {
             getBooksInformation()
             Handler().postDelayed({
                 if (bookData == null) {
-                    var childrenCount = 0
+                    var childrenCount: Int
                     CoroutineScope(Dispatchers.IO).launch {
                         if (booksDao?.isExists() == true) {
                             childrenCount = booksDao?.get()!!.childrenCount
@@ -79,7 +77,7 @@ class SplashActivity : AppCompatActivity() {
             }, 7000)
         } else {
             Handler().postDelayed({
-                var childrenCount = 0
+                var childrenCount: Int
 
                 CoroutineScope(Dispatchers.IO).launch {
                     if (booksDao?.isExists() == true) {
